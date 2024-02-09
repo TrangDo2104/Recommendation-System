@@ -137,7 +137,11 @@ def find_similar_products_by_description(query, products, k=5):
     query_vec = tfidf.transform([query])
     cosine_sim = cosine_similarity(query_vec, tfidf_matrix).flatten()
     top_indices = cosine_sim.argsort()[-k:][::-1]
-    return products.iloc[top_indices][['product_id', 'name']]
+    similar_products = products.iloc[top_indices][['name', 'product_id']]
+    similar_products['Relevance Score'] = cosine_sim[top_indices]
+    similar_products.columns = ['Name', 'Product ID', 'Relevance Score']
+    return similar_products
+
 
 def personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, k=5):
     """Generate personalized product recommendations."""
@@ -145,7 +149,9 @@ def personalized_recommendation(user_input, products, ratings, algo, user_name_t
     if user_id is not None:
         st.write(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
         recommended_products = hybrid_recommendation(user_id, products.copy(), ratings, algo, k)
-        st.write(recommended_products[['name', 'hybrid_score']])
+        recommended_products = recommended_products[['name', 'product_id', 'hybrid_score']]
+        recommended_products.columns = ['Name', 'Product ID', 'Relevance Score']
+        st.write(recommended_products)
     else:
         st.write("User not found or you're a new user. Let's find some products for you.")
 
