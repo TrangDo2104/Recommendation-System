@@ -152,7 +152,8 @@ def find_similar_products_by_description(query, products_df, k=5):
 
 # Hybrid Recommendation
 def hybrid_recommendation(username, k=5):
-    products_df_copy = products_df.copy()
+    products_df_copy = products_df[['product_id', 'name', 'description']].copy()
+
     user_id = user_name_to_id.get(username.lower())
     if user_id is None:
         return pd.DataFrame()
@@ -161,11 +162,11 @@ def hybrid_recommendation(username, k=5):
     user_ratings = user_ratings.set_index('product_id')['rating'].to_dict()
 
     tfidf = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = tfidf.fit_transform(products_df['description'])
-    product_ids = products_df['product_id'].tolist()
+    tfidf_matrix = tfidf.fit_transform(products_df_copy['description'])
+    product_ids = products_df_copy['product_id'].tolist()
 
     # CBF scores
-    cbf_scores = np.zeros(len(products_df))
+    cbf_scores = np.zeros(len(products_df_copy))
     similarity_matrix = cosine_similarity(tfidf_matrix)
     for pid, rating in user_ratings.items():
         if pid in product_ids:
@@ -176,6 +177,18 @@ def hybrid_recommendation(username, k=5):
                     cbf_scores[i] += sim * 0.5
                 else:
                     cbf_scores[i] -= sim * 0.5
+
+    # CF scores
+    cf_scores = np.array([algo.predict(user_id, pid).est for pid in product_ids])
+
+    # Hybrid scores
+    hybrid_scores = cf_scores * 0.5 + cbf_scores * 0.5
+    products_df_copy['hybrid_score'] = hybrid_scores
+
+    # Sort by hybrid_score and return the first k rows
+    recommended_products = products_df_copy.sort_values(by='hybrid_score', ascending=False).head(k)
+
+    return recommended_products[['name', 'product_id', 'hybrid_score']]
 
     # CF scores
     cf_scores = np.array([algo.predict(user_id, pid).est for pid in product_ids])
