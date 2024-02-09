@@ -211,23 +211,27 @@ def display_message(message, category="info"):
     elif category == "success":
         st.markdown(f"<p style='color: green; font-size: 20px;'>{message}</p>", unsafe_allow_html=True)
 
-# Example usage of display_message:
+# Heading for personalized recommendations
+st.markdown("## 🌟 Uncover Your Personalized Treasures 🌟")
+st.markdown("👤 **Enter your username** to unlock products curated just for you:")
+user_input = st.text_input("", key="user_input", placeholder="Your Username Here")
 if user_input:
     recommended_products = recommend_for_user(user_input, ratings_df, products_df, 5)
     if not recommended_products.empty:
-        display_message("Here are your personalized recommendations:", "success")
         st.table(recommended_products)
     else:
-        display_message("Unable to find recommendations based on your history. But don't worry, here are some top-rated products just for you!", "warning")
-        global_top_products = get_global_top_rated_products(ratings_df, products_df, 5)
-        st.table(global_top_products)
-else:
-    display_message("Enter your username to see personalized recommendations, or explore products by description!", "info")
+        display_message("🔍 Couldn't find specific recommendations for you. Here are some top picks instead!", "warning")
 
+# Spacer for aesthetic separation
+st.markdown("---")  # Adds a horizontal line for visual separation
+
+# Heading for new users or product search by description
+st.markdown("## 🛍️ Explore Products Tailored to Your Taste 🛍️")
+st.markdown("🔎 **Looking for something specific?** Enter a product description to find your next favorite item:")
+product_description_query = st.text_input("", key="product_description", placeholder="Describe the product you're interested in")
 if product_description_query:
     similar_products = find_similar_products_by_description(product_description_query, products_df, 5)
     if not similar_products.empty:
-        display_message("Found some products that might interest you:", "success")
         st.table(similar_products)
     else:
-        display_message("No similar products found based on the description.", "error")
+        display_message("🚫 No matches found based on the description. Try different keywords!", "error")
