@@ -202,21 +202,25 @@ def personalized_recommendation(user_input, products, ratings, algo, user_name_t
     else:
         st.markdown("<p class='warning-message'>User not found or you're a new user. Let's find some products for you.</p>", unsafe_allow_html=True)
 
+# Main interaction flow adapted for Streamlit with fixes for errors
 def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
     """Main interaction flow adapted for Streamlit."""
-    st.markdown("<p class='header'>Enter your name for personalized recommendations or enter a product description below:</p>", unsafe_allow_html=True)
-    user_input = st.text_input("", '')
+    
+    # For personalized recommendations - Notice the unique key and non-empty label
+    user_input = st.text_input("Enter your name for personalized recommendations or enter a product description below:",
+                               '', key='user_input', label_visibility='collapsed')
     
     if user_input:
         personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
     
-    st.markdown("<p class='header'>What are you looking for? Enter a product description or name:</p>", unsafe_allow_html=True)
-    query = st.text_input("", '')
+    # For finding similar products - Notice the unique key and non-empty label
+    query = st.text_input("What are you looking for? Enter a product description or name:",
+                          '', key='product_search', label_visibility='collapsed')
     
     if query:
         similar_products = find_similar_products_by_description(query, products, 5)
         if not similar_products.empty:
-            st.markdown("<p class='header'>Top relevant products to your description input:</p>", unsafe_allow_html=True)
+            st.markdown("<p class='success-message'>Top relevant products to your description input:</p>", unsafe_allow_html=True)
             st.table(similar_products)
         else:
             st.markdown("<p class='warning-message'>No similar products found.</p>", unsafe_allow_html=True)
@@ -226,3 +230,4 @@ if 'restart' not in st.session_state:
 
 if not st.session_state['restart']:
     main_interaction_streamlit(products_df, ratings_df, algo, user_name_to_id)
+
