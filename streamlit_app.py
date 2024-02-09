@@ -66,7 +66,16 @@ def collaborative_filtering(ratings_df):
     trainset = data.build_full_trainset()
     algo.fit(trainset)
 
-    # The function should return 'algo' which is the trained model object.
+    # Predict on the test set and calculate precision and recall
+    predictions = algo.test(testset)
+    precision, recall = precision_recall_at_k(predictions)
+
+    avg_precision = np.mean(list(precision.values()))
+    avg_recall = np.mean(list(recall.values()))
+
+    st.write(f"Average Precision: {avg_precision:.2f}")
+    st.write(f"Average Recall: {avg_recall:.2f}")
+
     return algo
 
 def precision_recall_at_k(predictions, k=5, threshold=3.5):
