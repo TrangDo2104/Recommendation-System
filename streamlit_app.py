@@ -10,43 +10,61 @@ from collections import defaultdict
 # Custom CSS for styling
 st.markdown("""
     <style>
+        /* General full-width setting for components */
         .full-width {
             width: 100%;
         }
+
+        /* Message styling */
         .success-message {
             color: green;
             font-weight: bold;
+            font-size: 20px; /* Larger font for visibility */
         }
         .warning-message {
             color: orange;
             font-weight: bold;
+            font-size: 20px; /* Larger font for visibility */
         }
         .error-message {
             color: red;
             font-weight: bold;
+            font-size: 20px; /* Larger font for visibility */
         }
-        .content-container {
+
+        /* Container styling */
+        .content-container, .recommendation-container {
             padding: 20px;
             border-radius: 10px;
             background-color: #f9f9f9;
             box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+            margin-top: 20px; /* Ensures spacing for all containers */
         }
         .recommendation-container {
-            padding: 20px;
-            border-radius: 10px;
             background-color: #ffffff;
-            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
-            margin-top: 20px;
         }
+
+        /* Header styling */
         .header {
-            font-size: 24px;
+            font-size: 30px; /* Increased font size */
             font-weight: bold;
             color: #333333;
         }
         .sub-header {
-            font-size: 18px;
+            font-size: 24px; /* Increased font size */
             font-weight: bold;
             color: #666666;
+        }
+
+        /* Additional styling for enhancing user input fields */
+        input, textarea, select {
+            font-size: 18px; /* Makes input text larger */
+            font-weight: bold; /* Bold input text */
+        }
+
+        /* Enhance tables */
+        .stTable {
+            font-size: 18px; /* Larger font for table contents */
         }
     </style>
 """, unsafe_allow_html=True)
