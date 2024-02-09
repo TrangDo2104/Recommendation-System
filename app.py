@@ -79,7 +79,7 @@ products_df.columns = ['product_id', 'name', 'price', 'description']
 products_df.head()
 
 ratings_df = ratings_dfs.reset_index().melt(id_vars='User', var_name='Item', value_name='Rating')
-ratings_df = ratings_df[ratings_df['Rating'] > 0]
+ratings_df = ratings_df[ratings_df['rating'] > 0]
 
 # Convert 'user_name' to a categorical type and then to numerical codes
 ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
@@ -110,7 +110,7 @@ def find_similar_products_by_description(query, products, k=5):
 def recommend_for_user(user_id, ratings, products, k=5):
     """Recommend products based on a user's past high ratings."""
     user_ratings = ratings_df[ratings_df['user_name'] == user_id]
-    high_rated_products = user_ratings[user_ratings['Rating'] > 3.5]['Product ID'].unique()
+    high_rated_products = user_ratings[user_ratings['rating'] > 3.5]['Product ID'].unique()
 
     if len(high_rated_products) == 0:
         st.write("No high-rated products for user. Trying top-rated products...")
