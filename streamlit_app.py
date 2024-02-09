@@ -12,78 +12,92 @@ st.title('Hybrid Recommendation System')
 
 # Define your data loading and processing functions
 def load_data(csv_file_path, sep=';', index_col=None):
+    """Loads data from a CSV file and returns a DataFrame."""
     try:
         df = pd.read_csv(csv_file_path, sep=sep, index_col=index_col)
-        st.write("Data loaded successfully.")
+        print("Data loaded successfully.")
         return df
     except Exception as e:
-        st.write(f"Error loading the data: {e}")
+        print(f"Error loading the data: {e}")
         return None
 
-# Load your data here
-products_dfs = load_data('Makeup_Products_Metadata.csv', sep=';')
-products_df= products_dfs[['Product ID','Product Name', 'Product Price [SEK]','Product Description']]
-products_df.columns = ['product_id', 'name', 'price', 'description']
-ratings_df = load_data('User_review_data.csv', sep=';')
 
-# Assuming you preprocess your data here and create ratings_df, products_df
+# Load product metadata and user ratings data
+product_metadata_path = 'Makeup_Products_Metadata.csv'  # Update path as necessary
+user_ratings_path = 'User_review_data.csv'  # Update path as necessary
 
-ratings_df = ratings_df.reset_index().melt(id_vars='User', var_name='Item', value_name='Rating')
-ratings_df = ratings_df[ratings_df['Rating'] > 0]
+products_df = load_data(product_metadata_path, sep=';')
+ratings_df = load_data(user_ratings_path, sep=';', index_col='User')
+
+products= products_df[['Product ID','Product Name', 'Product Price [SEK]','Product Description']]
+products.columns = ['product_id', 'name', 'price', 'description']
+products.head()
+
+ratings = ratings_df.reset_index().melt(id_vars='User', var_name='Item', value_name='Rating')
+ratings = ratings[ratings['Rating'] > 0]
 
 # Convert 'user_name' to a categorical type and then to numerical codes
-ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
-ratings_df.columns = ['user_name', 'product_id', 'rating', 'user_id']
-print(ratings_df)
-user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
+ratings['user_id'] = ratings['User'].astype('category').cat.codes
+ratings.columns = ['user_name', 'product_id', 'rating', 'user_id']
+user_name_to_id = pd.Series(ratings['user_id'].values, index=ratings['user_name'].str.lower()).to_dict()
 
-from collections import defaultdict
+def collaborative_filtering_with_streamlit(ratings_df):
+    """Adapts the collaborative filtering process for Streamlit."""
+    st.write("Starting Collaborative Filtering with SVD algorithm...")
 
-# Function to calculate precision and recall at k
+    # Data preparation
+    reader = Reader(rating_scale=(1, 5))
+    data = Dataset.load_from_df(ratings_df[['user_id', 'product_id', 'rating']], reader)
+    
+    # Split data into training and test set
+    trainset, testset = train_test_split(data, test_size=0.25)
+
+    # GridSearchCV for SVD hyperparameters
+    st.write("Tuning hyperparameters...")
+    param_grid = {'n_epochs': [5, 10], 'lr_all': [0.002, 0.005], 'reg_all': [0.02, 0.04]}
+    gs = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=3)
+    gs.fit(data)
+
+    # Best SVD model
+    algo = gs.best_estimator['rmse']
+    st.write(f"Best hyperparameters: {gs.best_params['rmse']}")
+
+    # Re-train on the full dataset
+    trainset = data.build_full_trainset()
+    algo.fit(trainset)
+
+    # Predict on the test set and calculate precision and recall
+    predictions = algo.test(testset)
+    precision, recall = precision_recall_at_k(predictions)
+
+    avg_precision = np.mean(list(precision.values()))
+    avg_recall = np.mean(list(recall.values()))
+
+    st.write(f"Average Precision: {avg_precision:.2f}")
+    st.write(f"Average Recall: {avg_recall:.2f}")
+
+    return algo
+
 def precision_recall_at_k(predictions, k=5, threshold=3.5):
-    """Return precision and recall at k metrics for each user."""
+    """Calculates precision and recall at k for given predictions."""
+    # Identical to the original function, no changes required here.
     user_est_true = defaultdict(list)
     for uid, _, true_r, est, _ in predictions:
         user_est_true[uid].append((est, true_r))
 
-    precisions = dict()
-    recalls = dict()
+    precision = dict()
+    recall = dict()
     for uid, user_ratings in user_est_true.items():
         user_ratings.sort(key=lambda x: x[0], reverse=True)
         n_rel = sum((true_r >= threshold) for (_, true_r) in user_ratings)
         n_rec_k = sum((est >= threshold) for (est, _) in user_ratings[:k])
         n_rel_and_rec_k = sum(((true_r >= threshold) and (est >= threshold)) for (est, true_r) in user_ratings[:k])
 
-        precisions[uid] = n_rel_and_rec_k / n_rec_k if n_rec_k != 0 else 1
-        recalls[uid] = n_rel_and_rec_k / n_rel if n_rel != 0 else 1
+        precision[uid] = n_rel_and_rec_k / n_rec_k if n_rec_k != 0 else 1
+        recall[uid] = n_rel_and_rec_k / n_rel if n_rel != 0 else 1
 
-    return precisions, recalls
+    return precision, recall
 
-# Update collaborative filtering function to include precision and recall evaluation
-def collaborative_filtering(ratings_df):
-    reader = Reader(rating_scale=(1, 5))
-    data = Dataset.load_from_df(ratings_df[['user_id', 'product_id', 'rating']], reader)
-    trainset, testset = train_test_split(data, test_size=0.25)
-
-    param_grid = {'n_epochs': [5, 10], 'lr_all': [0.002, 0.005], 'reg_all': [0.02, 0.04]}
-    gs = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=3)
-    gs.fit(data)
-
-    algo = gs.best_estimator['rmse']
-    trainset = data.build_full_trainset()
-    algo.fit(trainset)
-
-    # Predict on the test set
-    predictions = algo.test(testset)
-
-    # Calculate precision and recall at k
-    precisions, recalls = precision_recall_at_k(predictions)
-
-    # Compute average precision and recall
-    avg_precision = np.mean(list(precisions.values()))
-    avg_recall = np.mean(list(recalls.values()))
-
-    return algo, avg_precision, avg_recall
 
 # Calculate similarity for content-based filtering
 def calculate_similarity(products_df):
@@ -157,7 +171,5 @@ if st.button('Get Product-based Recommendations'):
     else:
         st.write("Please enter a product name.")
 
-if st.button('Train and Evaluate Model'):
-    algo, avg_precision, avg_recall = collaborative_filtering(ratings_df)
-    st.write(f"Average Precision: {avg_precision:.2f}")
-    st.write(f"Average Recall: {avg_recall:.2f}")
+if st.button('Train and Evaluate CF Model'):
+    algo = collaborative_filtering_with_streamlit(ratings_df)
