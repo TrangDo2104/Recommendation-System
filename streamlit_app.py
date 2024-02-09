@@ -154,7 +154,7 @@ def calculate_similarity(products_df):
     return cosine_sim
 
 # Hybrid Recommendation
-def hybrid_recommendation(username, k=5):
+def hybrid_recommendation(user_id, products, ratings, algo, k=5):
     user_id = user_name_to_id.get(username.lower())
     if user_id is None:
         return pd.DataFrame()
