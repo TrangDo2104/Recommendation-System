@@ -87,40 +87,43 @@ user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user
 
 def collaborative_filtering(ratings_df):
     """Adapts the collaborative filtering process for Streamlit."""
-    st.write("Starting Collaborative Filtering with SVD algorithm...")
+    """Adapts the collaborative filtering process for Streamlit."""
+    show_details = st.checkbox("Show Collaborative Filtering Details")
+    if show_details:
+        st.write("Starting Collaborative Filtering with SVD algorithm...")
 
-    # Data preparation
-    reader = Reader(rating_scale=(1, 5))
-    data = Dataset.load_from_df(ratings_df[['user_id', 'product_id', 'rating']], reader)
-    
-    # Split data into training and test set
-    trainset, testset = train_test_split(data, test_size=0.25)
+        # Data preparation
+        reader = Reader(rating_scale=(1, 5))
+        data = Dataset.load_from_df(ratings_df[['user_id', 'product_id', 'rating']], reader)
 
-    # GridSearchCV for SVD hyperparameters
-    st.write("Tuning hyperparameters...")
-    param_grid = {'n_epochs': [5, 10], 'lr_all': [0.002, 0.005], 'reg_all': [0.02, 0.04]}
-    gs = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=3)
-    gs.fit(data)
+        # Split data into training and test set
+        trainset, testset = train_test_split(data, test_size=0.25)
 
-    # Best SVD model
-    algo = gs.best_estimator['rmse']
-    st.write(f"Best hyperparameters: {gs.best_params['rmse']}")
+        # GridSearchCV for SVD hyperparameters
+        st.write("Tuning hyperparameters...")
+        param_grid = {'n_epochs': [5, 10], 'lr_all': [0.002, 0.005], 'reg_all': [0.02, 0.04]}
+        gs = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=3)
+        gs.fit(data)
 
-    # Re-train on the full dataset
-    trainset = data.build_full_trainset()
-    algo.fit(trainset)
+        # Best SVD model
+        algo = gs.best_estimator['rmse']
+        st.write(f"Best hyperparameters: {gs.best_params['rmse']}")
 
-    # Predict on the test set and calculate precision and recall
-    predictions = algo.test(testset)
-    precision, recall = precision_recall_at_k(predictions)
+        # Re-train on the full dataset
+        trainset = data.build_full_trainset()
+        algo.fit(trainset)
 
-    avg_precision = np.mean(list(precision.values()))
-    avg_recall = np.mean(list(recall.values()))
+        # Predict on the test set and calculate precision and recall
+        predictions = algo.test(testset)
+        precision, recall = precision_recall_at_k(predictions)
 
-    st.write(f"Average Precision: {avg_precision:.2f}")
-    st.write(f"Average Recall: {avg_recall:.2f}")
+        avg_precision = np.mean(list(precision.values()))
+        avg_recall = np.mean(list(recall.values()))
 
-    return algo
+        st.write(f"Average Precision: {avg_precision:.2f}")
+        st.write(f"Average Recall: {avg_recall:.2f}")
+
+        return algo
 
 def precision_recall_at_k(predictions, k=5, threshold=3.5):
     """Calculates precision and recall at k for given predictions."""
