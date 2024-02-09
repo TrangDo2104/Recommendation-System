@@ -144,7 +144,7 @@ user_input = st.text_input("Enter username (for user-based recommendations):")
 product_input = st.text_input("Enter product name (for product-based recommendations):")
 
 # Train the model
-algo, _, _ = collaborative_filtering(ratings_df)
+algo = collaborative_filtering(ratings_df)
 
 # Button for user-based recommendations
 if st.button('Get User-based Recommendations'):
