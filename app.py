@@ -94,4 +94,4 @@ if product_description_query:
     if not similar_products.empty:
         st.write(similar_products)
     else:
-        st.write("No similar products found based
+        st.write("No similar products found based")
