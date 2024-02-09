@@ -15,10 +15,10 @@ def load_data(csv_file_path, sep=';', index_col=None):
     """Loads data from a CSV file and returns a DataFrame."""
     try:
         df = pd.read_csv(csv_file_path, sep=sep, index_col=index_col)
-        print("Data loaded successfully.")
+        st.success("Data loaded successfully.")
         return df
     except Exception as e:
-        print(f"Error loading the data: {e}")
+        st.error(f"Error loading the data: {e}")
         return None
 
 
@@ -147,13 +147,13 @@ def personalized_recommendation(user_input, products, ratings, algo, user_name_t
     """Generate personalized product recommendations."""
     user_id = user_name_to_id.get(user_input.lower())
     if user_id is not None:
-        st.write(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
+        st.success(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
         recommended_products = hybrid_recommendation(user_id, products.copy(), ratings, algo, k)
         recommended_products = recommended_products[['name', 'product_id', 'hybrid_score']]
         recommended_products.columns = ['Name', 'Product ID', 'Relevance Score']
-        st.write(recommended_products)
+        st.table(recommended_products)
     else:
-        st.write("User not found or you're a new user. Let's find some products for you.")
+        st.warning("User not found or you're a new user. Let's find some products for you.")
 
 def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
     """Main interaction flow adapted for Streamlit."""
@@ -167,10 +167,10 @@ def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
     if query:
         similar_products = find_similar_products_by_description(query, products, 5)
         if not similar_products.empty:
-            st.write("Top relevant products to your description input:")
+            st.success("Top relevant products to your description input:")
             st.table(similar_products)
         else:
-            st.write("No similar products found.")
+            st.warning("No similar products found.")
 
 if 'restart' not in st.session_state:
     st.session_state['restart'] = False
