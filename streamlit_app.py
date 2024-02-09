@@ -77,8 +77,8 @@ def load_data(csv_file_path, sep=','):
         return pd.DataFrame()
 
 # Sample paths - replace with actual paths
-product_metadata_path = 'path_to/Makeup_Products_Metadata.csv'
-user_ratings_path = 'path_to/User_review_data.csv'
+product_metadata_path = 'Makeup_Products_Metadata.csv'
+user_ratings_path = 'User_review_data.csv'
 
 products_df = load_data(product_metadata_path)
 ratings_df = load_data(user_ratings_path)
