@@ -188,4 +188,4 @@ if 'restart' not in st.session_state:
     st.session_state['restart'] = False
 
 if not st.session_state['restart']:
-    main_interaction_streamlit(products, ratings, algo, user_name_to_id)
+    main_interaction_streamlit(products_df, ratings_df, algo, user_name_to_id)
