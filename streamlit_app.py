@@ -153,40 +153,26 @@ def calculate_similarity(products_df):
     cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
     return cosine_sim
 
-# Hybrid Recommendation
+# Hybrid Recommendation Function
 def hybrid_recommendation(user_id, products, ratings, algo, k=5):
-    user_id = user_name_to_id.get(user_name.lower())
-    if user_id is None:
-        return pd.DataFrame()
-
-    user_ratings = ratings_df[ratings_df['user_name'].str.lower() == user_name.lower()]
-    user_ratings = user_ratings.set_index('product_id')['rating'].to_dict()
-
-    tfidf = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = tfidf.fit_transform(products_df['description'])
-    product_ids = products_df['product_id'].tolist()
-
-    # CBF scores
-    cbf_scores = np.zeros(len(products_df))
-    similarity_matrix = cosine_similarity(tfidf_matrix)
-    for pid, rating in user_ratings.items():
-        if pid in product_ids:
-            idx = product_ids.index(pid)
-            similarities = similarity_matrix[idx]
-            for i, sim in enumerate(similarities):
-                if rating >= 3.5:
-                    cbf_scores[i] += sim * 0.5
-                else:
-                    cbf_scores[i] -= sim * 0.5
-
-    # CF scores
-    cf_scores = np.array([algo.predict(user_id, pid).est for pid in product_ids])
+    # Logic as provided
+    # Check if user_id exists to provide CF predictions
+    cf_predictions = [algo.predict(user_id, pid).est for pid in products['product_id']]
+    products['cf_score'] = cf_predictions
     
-    # Hybrid scores
-    hybrid_scores = cf_scores * 0.5 + cbf_scores * 0.5
-    products_df['hybrid_score'] = hybrid_scores
+    # Calculate CBF similarity
+    cbf_similarity = calculate_similarity(products)
+    products['cbf_score'] = cbf_similarity.mean(axis=1)
+    
+    # Hybrid score
+    products['hybrid_score'] = (products['cf_score'] + products['cbf_score']) / 2
+    
+    # Sort and clean up
+    recommended_products = products.sort_values('hybrid_score', ascending=False).head(k)
+    products.drop(columns=['cf_score', 'cbf_score', 'hybrid_score'], inplace=True, errors='ignore')
+    
+    return recommended_products
 
-    return products_df.sort_values(by='hybrid_score', ascending=False).head(k)
     
 # Train the model
 algo = collaborative_filtering(ratings_df)
