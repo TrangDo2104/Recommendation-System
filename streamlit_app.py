@@ -202,21 +202,23 @@ def personalized_recommendation(user_input, products, ratings, algo, user_name_t
     else:
         st.markdown("<p class='warning-message'>User not found or you're a new user. Let's find some products for you.</p>", unsafe_allow_html=True)
 
-# Main interaction flow adapted for Streamlit with fixes for errors
+# Main interaction flow adapted for Streamlit with improved user interface
 def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
     """Main interaction flow adapted for Streamlit."""
-    
-    # For personalized recommendations - Notice the unique key and non-empty label
-    user_input = st.text_input("Enter your name for personalized recommendations or enter a product description below:",
-                               '', key='user_input', label_visibility='collapsed')
-    
+
+    # Separate the functionalities more clearly with explicit prompts and keys
+    # For personalized recommendations
+    st.markdown("## Personalized Recommendations")
+    st.markdown("Enter your name to receive personalized product recommendations.")
+    user_input = st.text_input("Your Name:", key='user_input_name')
+
     if user_input:
         personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
-    
-    # For finding similar products - Notice the unique key and non-empty label
-    query = st.text_input("What are you looking for? Enter a product description or name:",
-                          '', key='product_search', label_visibility='collapsed')
-    
+
+    st.markdown("## Find Products")
+    st.markdown("Looking for something specific? Enter a product description or name to find similar products.")
+    query = st.text_input("Product Description or Name:", key='product_search')
+
     if query:
         similar_products = find_similar_products_by_description(query, products, 5)
         if not similar_products.empty:
