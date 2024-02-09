@@ -146,6 +146,7 @@ def precision_recall_at_k(predictions, k=5, threshold=3.5):
     return precision, recall
 
 
+
 # Calculate similarity for content-based filtering
 def calculate_similarity(products_df):
     tfidf = TfidfVectorizer(stop_words='english')
