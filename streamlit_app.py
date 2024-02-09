@@ -226,7 +226,7 @@ def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
     user_input = st.text_input("Enter your name to receive personalized product recommendations.", key='user_input_name')
 
     if user_input:
-        personalized_recommendation(user_input)
+        personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
 
     st.markdown("### New User? Dive Into Your Personalized Product Exploration Journey Here!")
     query = st.text_input("Looking for something specific? Enter a product description or name to find similar products.", key='product_search')
