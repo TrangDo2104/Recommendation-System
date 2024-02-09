@@ -41,7 +41,7 @@ ratings['user_id'] = ratings['User'].astype('category').cat.codes
 ratings.columns = ['user_name', 'product_id', 'rating', 'user_id']
 user_name_to_id = pd.Series(ratings['user_id'].values, index=ratings['user_name'].str.lower()).to_dict()
 
-def collaborative_filtering_with_streamlit(ratings_df):
+def collaborative_filtering(ratings_df):
     """Adapts the collaborative filtering process for Streamlit."""
     st.write("Starting Collaborative Filtering with SVD algorithm...")
 
@@ -172,4 +172,4 @@ if st.button('Get Product-based Recommendations'):
         st.write("Please enter a product name.")
 
 if st.button('Train and Evaluate CF Model'):
-    algo = collaborative_filtering_with_streamlit(ratings_df)
+    algo = collaborative_filtering(ratings_df)
