@@ -87,7 +87,6 @@ user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user
 
 def collaborative_filtering(ratings_df):
     """Adapts the collaborative filtering process for Streamlit."""
-    """Adapts the collaborative filtering process for Streamlit."""
     show_details = st.checkbox("Show Collaborative Filtering Details")
     if show_details:
         st.write("Starting Collaborative Filtering with SVD algorithm...")
