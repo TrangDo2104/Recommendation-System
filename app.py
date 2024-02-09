@@ -100,17 +100,17 @@ def calculate_similarity(products_df, query=None):
     return cosine_sim
 
 # Find Products by Description
-def find_similar_products_by_description(query, products, k=5):
+def find_similar_products_by_description(query, products_df, k=5):
     """Find similar products based on a query description."""
     cosine_sim = calculate_similarity(products, query)
     top_indices = cosine_sim.argsort()[-k:][::-1]
-    return products.iloc[top_indices]
+    return products_df.iloc[top_indices]
 
 # Recommendations Based on User Ratings
 def recommend_for_user(user_id, ratings, products, k=5):
     """Recommend products based on a user's past high ratings."""
     user_ratings = ratings_df[ratings_df['user_name'] == user_id]
-    high_rated_products = user_ratings[user_ratings['rating'] > 3.5]['Product ID'].unique()
+    high_rated_products = user_ratings[user_ratings['rating'] > 3.5]['product_id'].unique()
 
     if len(high_rated_products) == 0:
         st.write("No high-rated products for user. Trying top-rated products...")
@@ -119,8 +119,8 @@ def recommend_for_user(user_id, ratings, products, k=5):
 
     similar_products = pd.DataFrame()
     for product_id in high_rated_products:
-        if product_id in products['Product ID'].values:
-            product_desc = products.loc[products['Product ID'] == product_id, 'description'].iloc[0]
+        if product_id in products_df['products_df'].values:
+            product_desc = products_df.loc[products_df['products_df'] == product_id, 'description'].iloc[0]
             sim_products = find_similar_products_by_description(product_desc, products, k)
             similar_products = pd.concat([similar_products, sim_products], axis=0).drop_duplicates().head(k)
     return similar_products
