@@ -86,8 +86,10 @@ ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
 ratings_df.columns = ['user_name', 'product_id', 'rating', 'user_id']
 user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
 
-# Function to calculate similarity for content-based filtering
+
+# Calculate Similarity
 def calculate_similarity(products_df, query=None):
+    """Calculate TF-IDF cosine similarity based on product descriptions."""
     tfidf = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf.fit_transform(products_df['description'])
     if query:
@@ -97,59 +99,45 @@ def calculate_similarity(products_df, query=None):
         cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
     return cosine_sim
 
+# Find Products by Description
 def find_similar_products_by_description(query, products, k=5):
-    """Find similar products based on description."""
+    """Find similar products based on a query description."""
     cosine_sim = calculate_similarity(products, query)
     top_indices = cosine_sim.argsort()[-k:][::-1]
-    similar_products = products.iloc[top_indices][['name', 'product_id']]
-    similar_products['Relevance Score'] = cosine_sim[top_indices]
-    similar_products.columns = ['Name', 'Product ID', 'Relevance Score']
+    return products.iloc[top_indices]
+
+# Recommendations Based on User Ratings
+def recommend_for_user(user_id, ratings, products, k=5):
+    """Recommend products based on a user's past high ratings."""
+    user_ratings = ratings[ratings['User'] == user_id]
+    high_rated_products = user_ratings[user_ratings['Rating'] > 3.5]['Product ID'].unique()
+
+    if len(high_rated_products) == 0:
+        st.write("No high-rated products for user. Trying top-rated products...")
+        # Optionally, recommend top-rated products here
+        return pd.DataFrame()
+
+    similar_products = pd.DataFrame()
+    for product_id in high_rated_products:
+        if product_id in products['Product ID'].values:
+            product_desc = products.loc[products['Product ID'] == product_id, 'description'].iloc[0]
+            sim_products = find_similar_products_by_description(product_desc, products, k)
+            similar_products = pd.concat([similar_products, sim_products], axis=0).drop_duplicates().head(k)
     return similar_products
 
-def recommend_based_on_user_or_top_rated(user_input, products, ratings, user_name_to_id, k=5):
-    """Generate recommendations based on user's past high ratings or top-rated products."""
-    user_id = user_name_to_id.get(user_input.lower())
-    recommendations = pd.DataFrame()
-    if user_id is not None:
-        high_rated_products = ratings[(ratings['user_name'].str.lower() == user_input.lower()) & (ratings['rating'] > 3.5)]
-        if not high_rated_products.empty:
-            for product_id in high_rated_products['product_id'].unique():
-                if not products[products['product_id'] == product_id].empty:
-                    product_desc = products[products['product_id'] == product_id]['description'].iloc[0]
-                    similar_products = find_similar_products_by_description(product_desc, products, k)
-                    recommendations = pd.concat([recommendations, similar_products], ignore_index=True)
-            if not recommendations.empty:
-                recommendations = recommendations.drop_duplicates().sort_values('Relevance Score', ascending=False).head(k)
-            else:
-                st.error("No similar products found based on user's ratings.")
-        else:
-            st.markdown("<p class='warning-message'>No high-rated products found for this user. Showing top-rated products instead.</p>", unsafe_allow_html=True)
-            # Implement logic for recommending top-rated products if needed
+# UI for user input
+user_input = st.text_input("Enter your user ID for personalized recommendations:")
+if user_input:
+    recommended_products = recommend_for_user(user_input, ratings_df, products_df, 5)
+    if not recommended_products.empty:
+        st.write(recommended_products)
     else:
-        st.markdown("<p class='warning-message'>User not found. Please search by product description.</p>", unsafe_allow_html=True)
-    return recommendations
+        st.write("Unable to find recommendations based on user history.")
 
-# Main interaction flow
-def main_interaction_streamlit(products, ratings, user_name_to_id):
-    user_input = st.text_input("Enter your name to see recommendations:", key='user_input_name')
-    if user_input:
-        recommended_products = recommend_based_on_user_or_top_rated(user_input, products, ratings, user_name_to_id, 5)
-        if not recommended_products.empty:
-            st.table(recommended_products)
-        else:
-            st.markdown("<p class='error-message'>Unable to generate recommendations.</p>", unsafe_allow_html=True)
-    
-    product_description_query = st.text_input("Or enter a product description to find similar products:", key='product_desc_search')
-    if product_description_query:
-        similar_products = find_similar_products_by_description(product_description_query, products, 5)
-        if not similar_products.empty:
-            st.table(similar_products)
-        else:
-            st.markdown("<p class='error-message'>No similar products found based on the description.</p>", unsafe_allow_html=True)
-
-# Convert 'user_name' to a categorical type and then to numerical codes (adjust according to your DataFrame)
-ratings_df['user_id'] = ratings_df['user_name'].astype('category').cat.codes
-user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
-
-if __name__ == '__main__':
-    main_interaction_streamlit(products_df, ratings_df, user_name_to_id)
+product_description_query = st.text_input("Or enter a product description to find similar products:")
+if product_description_query:
+    similar_products = find_similar_products_by_description(product_description_query, products_df, 5)
+    if not similar_products.empty:
+        st.write(similar_products)
+    else:
+        st.write("No similar products found based on the description.")
