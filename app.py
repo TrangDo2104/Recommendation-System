@@ -79,7 +79,7 @@ products_df.columns = ['product_id', 'name', 'price', 'description']
 products_df.head()
 
 ratings_df = ratings_dfs.reset_index().melt(id_vars='User', var_name='Item', value_name='Rating')
-ratings_df = ratings_df[ratings_df['rating'] > 0]
+ratings_df = ratings_df[ratings_df['Rating'] > 0]
 
 # Convert 'user_name' to a categorical type and then to numerical codes
 ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
