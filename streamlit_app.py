@@ -87,10 +87,7 @@ user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user
 
 def collaborative_filtering(ratings_df):
     """Adapts the collaborative filtering process for Streamlit."""
-    st.write("Choose level of details for Collaborative Filtering:")
-    detail_level = st.selectbox("Level of details", ["Basic", "Advanced"])
-    
-    if detail_level == "Advanced":
+    with st.expander("Show Collaborative Filtering Details"):
         st.write("Starting Collaborative Filtering with SVD algorithm...")
 
         # Data preparation
