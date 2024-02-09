@@ -52,7 +52,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Streamlit UI components
-st.title('⭐ Welcom To Chimp AI's Hybrid Recommendation System ⭐')
+st.title("⭐ Welcom To Chimp AI's Hybrid Recommendation System ⭐")
 
 # Define your data loading and processing functions
 def load_data(csv_file_path, sep=';', index_col=None):
