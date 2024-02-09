@@ -56,29 +56,44 @@ def find_similar_products_by_description(query, products_df, k=5):
     top_indices = cosine_sim.argsort()[-k:][::-1]
     return products_df.iloc[top_indices]
 
-# Recommendations Based on User Ratings
+def get_global_top_rated_products(ratings_df, products_df, k=5):
+    """Get top-rated products globally based on average rating >= 4."""
+    # Calculate average rating for each product and count of ratings >= 4
+    avg_ratings = ratings_df.groupby('product_id').agg(
+        avg_rating=('rating', 'mean'),
+        count_ratings=('rating', lambda x: (x >= 4).sum())
+    ).reset_index()
+
+    # Filter products with avg_rating >= 4, sort by count_ratings descending
+    top_rated_products = avg_ratings[avg_ratings['avg_rating'] >= 4].sort_values(by='count_ratings', ascending=False).head(k)
+
+    # Join with products_df to get product details
+    top_rated_details = pd.merge(top_rated_products, products_df, on='product_id', how='left')
+
+    return top_rated_details
+
 def recommend_for_user(user_input, ratings_df, products_df, k=5):
-    """Recommend products based on a user's past high ratings, using their username."""
-    # Directly use the user_input as a username to filter ratings
+    """Recommend products based on a user's past high ratings or global top-rated products."""
+    # Attempt to find high-rated products for the user
     user_ratings = ratings_df[ratings_df['user_name'].str.lower() == user_input.lower()]
     
-    if user_ratings.empty:
-        st.write("User not found or no ratings available. Please try a different username.")
-        return pd.DataFrame()
-
     high_rated_products = user_ratings[user_ratings['rating'] > 3.5]['product_id'].unique()
 
-    if len(high_rated_products) == 0:
-        st.write("No high-rated products for this user. Trying top-rated products...")
-        return pd.DataFrame()
-
     similar_products = pd.DataFrame()
-    for product_id in high_rated_products:
-        # Ensure product_id is checked against 'product_id' column correctly
-        if product_id in products_df['product_id'].values:
-            product_desc = products_df.loc[products_df['product_id'] == product_id, 'description'].iloc[0]
-            sim_products = find_similar_products_by_description(product_desc, products_df, k)
-            similar_products = pd.concat([similar_products, sim_products], axis=0).drop_duplicates().head(k)
+    if len(high_rated_products) > 0:
+        for product_id in high_rated_products:
+            if product_id in products_df['product_id'].values:
+                product_desc = products_df.loc[products_df['product_id'] == product_id, 'description'].iloc[0]
+                sim_products = find_similar_products_by_description(product_desc, products_df, k)
+                similar_products = pd.concat([similar_products, sim_products], axis=0).drop_duplicates().head(k)
+    else:
+        # User has no high-rated products or not found, use global top-rated products instead
+        similar_products = get_global_top_rated_products(ratings_df, products_df, k)
+
+    if similar_products.empty:
+        st.write("Unable to find recommendations based on user history. Showing global top-rated products instead.")
+        similar_products = get_global_top_rated_products(ratings_df, products_df, k)
+    
     return similar_products
 
 # UI for user input
