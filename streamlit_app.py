@@ -188,7 +188,7 @@ def hybrid_recommendation(username, k=5, ratings_df=ratings_df, user_name_to_id=
     # Sort by hybrid_score and return the first k rows
     recommended_products = products_df_copy.sort_values(by='hybrid_score', ascending=False).head(k)
 
-    return recommended_products[['name', 'product_id', 'hybrid_score']]
+    return recommended_products.set_index('product_id')[['name', 'product_id', 'hybrid_score']]
 
     # CF scores
     cf_scores = np.array([algo.predict(user_id, pid).est for pid in product_ids])
