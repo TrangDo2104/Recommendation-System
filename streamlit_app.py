@@ -208,16 +208,14 @@ def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
 
     # Separate the functionalities more clearly with explicit prompts and keys
     # For personalized recommendations
-    st.markdown("### Personalized Recommendations")
-    st.markdown("Enter your name to receive personalized product recommendations.")
-    user_input = st.text_input("Your Name:", key='user_input_name')
+    st.markdown("### Here are the products personalized for Chimp AI's customer")
+    user_input = st.text_input("Enter your name to receive personalized product recommendations.", key='user_input_name')
 
     if user_input:
         personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
 
     st.markdown("### New User? Don't Worry, find your products here")
-    st.markdown("Looking for something specific? Enter a product description or name to find similar products.")
-    query = st.text_input("Product Description or Name:", key='product_search')
+    query = st.text_input("Looking for something specific? Enter a product description or name to find similar products.", key='product_search')
 
     if query:
         similar_products = find_similar_products_by_description(query, products, 5)
