@@ -188,7 +188,7 @@ def personalized_recommendation(user_input, products, ratings, algo, user_name_t
     if user_id is not None:
         st.markdown(f"<p class='success-message'>Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:</p>", unsafe_allow_html=True)
         recommended_products = hybrid_recommendation(user_id, products.copy(), ratings, algo, k)
-        recommended_products = recommended_products[['name', 'product_id', 'hybrid_score']]
+        recommended_products = recommended_products[['name', 'product_id', 'cf_score']]
         recommended_products.columns = ['Name', 'Product ID', 'Relevance Score']
         st.table(recommended_products)
     else:
