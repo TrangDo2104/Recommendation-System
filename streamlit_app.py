@@ -159,17 +159,9 @@ def hybrid_recommendation(user_id, products, ratings, algo, k=5):
     # Check if user_id exists to provide CF predictions
     cf_predictions = [algo.predict(user_id, pid).est for pid in products['product_id']]
     products['cf_score'] = cf_predictions
-    
-    # Calculate CBF similarity
-    cbf_similarity = calculate_similarity(products)
-    products['cbf_score'] = cbf_similarity.mean(axis=1)
-    
-    # Hybrid score
-    products['hybrid_score'] = (products['cf_score'] + products['cbf_score']) / 2
-    
     # Sort and clean up
-    recommended_products = products.sort_values('hybrid_score', ascending=False).head(k)
-    products.drop(columns=['cf_score', 'cbf_score', 'hybrid_score'], inplace=True, errors='ignore')
+    recommended_products = products.sort_values('cf_score', ascending=False).head(k)
+    products.drop(columns=['cf_score'], inplace=True, errors='ignore')
     
     return recommended_products
 
