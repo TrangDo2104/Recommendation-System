@@ -28,7 +28,7 @@ st.markdown("""
         .content-container {
             padding: 20px;
             border-radius: 10px;
-            background-color: #f5f5f5;
+            background-color: #f9f9f9;
             box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
         }
         .recommendation-container {
@@ -48,15 +48,11 @@ st.markdown("""
             font-weight: bold;
             color: #666666;
         }
-        .icon {
-            vertical-align: middle;
-            margin-right: 10px;
-        }
     </style>
 """, unsafe_allow_html=True)
 
 # Streamlit UI components
-st.title('🌟 Hybrid Recommendation System')
+st.title('🌈 Hybrid Recommendation System')
 
 # Define your data loading and processing functions
 def load_data(csv_file_path, sep=';', index_col=None):
@@ -205,7 +201,7 @@ def personalized_recommendation(user_input, products, ratings, algo, user_name_t
 
 def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
     """Main interaction flow adapted for Streamlit."""
-    user_input = st.text_input("👤 Enter your name for personalized recommendations or enter a product description below:", '')
+    user_input = st.text_input("👥 Enter your name for personalized recommendations or enter a product description below:", '')
     
     if user_input:
         personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
