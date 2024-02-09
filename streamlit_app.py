@@ -222,10 +222,6 @@ def hybrid_recommendation(username, products, ratings, algo, user_ids):
     return products[['product_id', 'cf_score', 'cbf_score', 'hybrid_score']].sort_values(by='hybrid_score', ascending=False)
 
 
-    
-# Train the model
-algo = collaborative_filtering(ratings_df)
-
 def find_similar_products_by_description(query, products, k=5):
     """Find similar products based on description."""
     tfidf = TfidfVectorizer(stop_words='english')
