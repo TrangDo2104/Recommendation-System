@@ -58,13 +58,14 @@ def find_similar_products_by_description(query, products_df, k=5):
 
 # Recommendations Based on User Ratings
 def recommend_for_user(user_input, ratings_df, products_df, k=5):
-    """Recommend products based on a user's past high ratings."""
-    user_id = user_name_to_id.get(user_input.lower())
-    if user_id is None:
-        st.write("User not found. Please try a different ID.")
+    """Recommend products based on a user's past high ratings, using their username."""
+    # Directly use the user_input as a username to filter ratings
+    user_ratings = ratings_df[ratings_df['user_name'].str.lower() == user_input.lower()]
+    
+    if user_ratings.empty:
+        st.write("User not found or no ratings available. Please try a different username.")
         return pd.DataFrame()
 
-    user_ratings = ratings_df[ratings_df['user_id'] == user_id]
     high_rated_products = user_ratings[user_ratings['rating'] > 3.5]['product_id'].unique()
 
     if len(high_rated_products) == 0:
@@ -73,6 +74,7 @@ def recommend_for_user(user_input, ratings_df, products_df, k=5):
 
     similar_products = pd.DataFrame()
     for product_id in high_rated_products:
+        # Ensure product_id is checked against 'product_id' column correctly
         if product_id in products_df['product_id'].values:
             product_desc = products_df.loc[products_df['product_id'] == product_id, 'description'].iloc[0]
             sim_products = find_similar_products_by_description(product_desc, products_df, k)
