@@ -135,7 +135,7 @@ def precision_recall_at_k(predictions, k=5, threshold=3.5):
 
     return precision, recall
 
-def find_similar_products_by_description(query, products_df):
+def find_similar_products_by_description(query, products_df, k=5):
     tfidf = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf.fit_transform(products_df['description'])
     query_vec = tfidf.transform([query])
