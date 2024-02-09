@@ -10,64 +10,48 @@ from collections import defaultdict
 # Custom CSS for styling
 st.markdown("""
     <style>
-        /* General full-width setting for components */
         .full-width {
             width: 100%;
         }
-
-        /* Message styling */
         .success-message {
             color: green;
             font-weight: bold;
-            font-size: 20px; /* Larger font for visibility */
         }
         .warning-message {
             color: orange;
             font-weight: bold;
-            font-size: 20px; /* Larger font for visibility */
         }
         .error-message {
             color: red;
             font-weight: bold;
-            font-size: 20px; /* Larger font for visibility */
         }
-
-        /* Container styling */
-        .content-container, .recommendation-container {
+        .content-container {
             padding: 20px;
             border-radius: 10px;
             background-color: #f9f9f9;
             box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
-            margin-top: 20px; /* Ensures spacing for all containers */
         }
         .recommendation-container {
+            padding: 20px;
+            border-radius: 10px;
             background-color: #ffffff;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+            margin-top: 20px;
         }
-
-        /* Header styling */
         .header {
-            font-size: 30px; /* Increased font size */
+            font-size: 24px;
             font-weight: bold;
             color: #333333;
+            margin-bottom: 10px;
         }
         .sub-header {
-            font-size: 24px; /* Increased font size */
+            font-size: 18px;
             font-weight: bold;
             color: #666666;
         }
-
-        /* Additional styling for enhancing user input fields */
-        input, textarea, select {
-            font-size: 18px; /* Makes input text larger */
-            font-weight: bold; /* Bold input text */
-        }
-
-        /* Enhance tables */
-        .stTable {
-            font-size: 18px; /* Larger font for table contents */
-        }
     </style>
 """, unsafe_allow_html=True)
+
 
 # Streamlit UI components
 st.title("⭐ Welcom To Chimp AI's Recommendation System ⭐")
@@ -220,17 +204,19 @@ def personalized_recommendation(user_input, products, ratings, algo, user_name_t
 
 def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
     """Main interaction flow adapted for Streamlit."""
-    user_input = st.text_input("Enter your name for personalized recommendations or enter a product description below:", '')
+    st.markdown("<p class='header'>Enter your name for personalized recommendations or enter a product description below:</p>", unsafe_allow_html=True)
+    user_input = st.text_input("", '')
     
     if user_input:
         personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
     
-    query = st.text_input("What are you looking for? Enter a product description or name:", '')
+    st.markdown("<p class='header'>What are you looking for? Enter a product description or name:</p>", unsafe_allow_html=True)
+    query = st.text_input("", '')
     
     if query:
         similar_products = find_similar_products_by_description(query, products, 5)
         if not similar_products.empty:
-            st.markdown("<p class='success-message'>Top relevant products to your description input:</p>", unsafe_allow_html=True)
+            st.markdown("<p class='header'>Top relevant products to your description input:</p>", unsafe_allow_html=True)
             st.table(similar_products)
         else:
             st.markdown("<p class='warning-message'>No similar products found.</p>", unsafe_allow_html=True)
