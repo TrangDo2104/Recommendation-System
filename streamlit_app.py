@@ -183,8 +183,6 @@ def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
         else:
             st.write("No similar products found.")
 
-# Place this within your Streamlit app code structure
-# Ensure all necessary functions and data are defined and available
 if 'restart' not in st.session_state:
     st.session_state['restart'] = False
 
