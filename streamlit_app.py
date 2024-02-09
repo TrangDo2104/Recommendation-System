@@ -22,7 +22,7 @@ def load_data(csv_file_path, sep=';', index_col=None):
 
 # Load your data here
 products_df = load_data('Makeup_Products_Metadata.csv', sep=';')
-ratings_df = load_data('User_review_data.csv', sep=';', index_col='User')
+ratings_df = load_data('User_review_data.csv', sep=';')
 
 # Assuming you preprocess your data here and create ratings_df, products_df
 
