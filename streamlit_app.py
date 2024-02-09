@@ -97,25 +97,43 @@ def calculate_similarity(products_df):
     cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
     return cosine_sim
 
-# Hybrid Recommendation Function
-def hybrid_recommendation(user_id, products, ratings, algo, k=5):
-    # Logic as provided
+def hybrid_recommendation(user_id, products, ratings, algo, k=5, product_name=None):
+    # Work with a copy to avoid modifying the original DataFrame
+    products_copy = products.copy()
+    
     # Check if user_id exists to provide CF predictions
-    cf_predictions = [algo.predict(user_id, pid).est for pid in products['product_id']]
-    products['cf_score'] = cf_predictions
+    if user_id is not None:
+        cf_predictions = [algo.predict(user_id, pid).est for pid in products_copy['product_id']]
+        products_copy['cf_score'] = cf_predictions
+    else:
+        products_copy['cf_score'] = 0  # Default to 0 if no user_id
     
-    # Calculate CBF similarity
-    cbf_similarity = calculate_similarity(products)
-    products['cbf_score'] = cbf_similarity.mean(axis=1)
+    # Calculate CBF similarity if product_name is provided
+    if product_name:
+        cosine_sim = calculate_similarity(products_copy)
+        idx = products_copy.index[products_copy['name'].str.lower() == product_name.lower()].tolist()
+        if idx:
+            sim_scores = list(enumerate(cosine_sim[idx[0]]))
+            sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+            sim_scores = sim_scores[1:k+1]  # Ignore the first one as it is the product itself
+            product_indices = [i[0] for i in sim_scores]
+            products_copy['cbf_score'] = 0
+            products_copy.loc[product_indices, 'cbf_score'] = [score[1] for score in sim_scores]
+        else:
+            products_copy['cbf_score'] = 0  # Default to 0 if no product_name match
+    else:
+        # Calculate CBF similarity based on existing product descriptions
+        cbf_similarity = calculate_similarity(products_copy)
+        products_copy['cbf_score'] = cbf_similarity.mean(axis=1)
     
-    # Hybrid score
-    products['hybrid_score'] = (products['cf_score'] + products['cbf_score']) / 2
+    # Hybrid score: average of CF and CBF scores
+    products_copy['hybrid_score'] = (products_copy['cf_score'] + products_copy['cbf_score']) / 2
     
     # Sort and clean up
-    recommended_products = products.sort_values('hybrid_score', ascending=False).head(k)
-    products.drop(columns=['cf_score', 'cbf_score', 'hybrid_score'], inplace=True, errors='ignore')
+    recommended_products = products_copy.sort_values('hybrid_score', ascending=False).head(k)
     
     return recommended_products
+
     
 # Train the model
 algo = collaborative_filtering(ratings_df)
