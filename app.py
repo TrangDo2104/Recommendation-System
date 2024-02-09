@@ -158,6 +158,7 @@ def display_message(message, category="info"):
 
 # UI for personalized recommendations
 st.markdown("### Uncover Your Personalized Treasures")
+st.markdown("##### Looking for products tailored just for you?")
 user_input = st.text_input("Enter your username:", placeholder="Username")
 if user_input:
     # Assuming recommend_for_user returns DataFrame
