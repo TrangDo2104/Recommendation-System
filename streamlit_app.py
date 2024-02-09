@@ -26,11 +26,13 @@ ratings_df = load_data('User_review_data.csv', sep=';')
 
 # Assuming you preprocess your data here and create ratings_df, products_df
 
-# Convert 'User' to a categorical type and then to numerical codes
+ratings_df = ratings_df.reset_index().melt(id_vars='User', var_name='Item', value_name='Rating')
+ratings_df = ratings_df[ratings_df['Rating'] > 0]
+
+# Convert 'user_name' to a categorical type and then to numerical codes
 ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
-print(ratings_df.columns)
-ratings_df.reset_index(inplace=True)
 ratings_df.columns = ['user_name', 'product_id', 'rating', 'user_id']
+print(ratings_df)
 user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
 
 from collections import defaultdict
