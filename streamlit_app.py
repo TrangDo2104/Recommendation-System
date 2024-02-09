@@ -56,15 +56,23 @@ st.markdown("""
 st.title("⭐ Welcome To Chimp AI's Recommendation System ⭐")
 
 # Load product metadata and user ratings data
-@st.cache
-def load_data(csv_file_path, sep=',', index_col=None):
+@st.cache_data
+def load_data(csv_file_path, sep=';', index_col=None):
     """Loads data from a CSV file and returns a DataFrame."""
     try:
         df = pd.read_csv(csv_file_path, sep=sep, index_col=index_col)
+        print("Data loaded successfully.")
         return df
     except Exception as e:
-        st.error(f"Error loading the data: {e}")
+        print(f"Error loading the data: {e}")
         return None
+
+# Load product metadata and user ratings data
+product_metadata_path = 'Makeup_Products_Metadata.csv'  # Update path as necessary
+user_ratings_path = 'User_review_data.csv'  # Update path as necessary
+
+products_df = load_data(product_metadata_path, sep=';')
+ratings_df = load_data(user_ratings_path, sep=';', index_col='User')
 
 # Update paths as necessary
 product_metadata_path = 'Makeup_Products_Metadata.csv'
@@ -77,10 +85,12 @@ ratings_df = load_data(user_ratings_path)
 products_df = products_df[['Product ID', 'Product Name', 'Product Description']]
 products_df.columns = ['product_id', 'name', 'description']
 
-ratings_df = ratings_df.dropna(subset=['Rating'])  # Assuming 'Rating' column exists
-ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
-ratings_df = ratings_df[['User', 'Product ID', 'Rating', 'user_id']]
-ratings_df.columns = ['user_name', 'product_id', 'rating', 'user_id']
+ratings = ratings_df.reset_index().melt(id_vars='User', var_name='Item', value_name='Rating')
+ratings = ratings[ratings['Rating'] > 0]
+
+# Convert 'user_name' to a categorical type and then to numerical codes
+ratings['user_id'] = ratings['User'].astype('category').cat.codes
+ratings.columns = ['user_name', 'product_id', 'rating', 'user_id']
 user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
 
 # Collaborative Filtering with Username
