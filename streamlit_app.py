@@ -1,5 +1,4 @@
 import streamlit as st
-import itertools
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -53,72 +52,82 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+
 # Streamlit UI components
-st.title("⭐ Welcome To Chimp AI's Recommendation System ⭐")
+st.title("⭐ Welcom To Chimp AI's Recommendation System ⭐")
 
-import streamlit as st
-import pandas as pd
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-from surprise import Dataset, Reader, SVD
-from surprise.model_selection import train_test_split, GridSearchCV
-from collections import defaultdict
-
-# Define a function to load data safely
-@st.cache_data
+# Define your data loading and processing functions
 def load_data(csv_file_path, sep=';', index_col=None):
     """Loads data from a CSV file and returns a DataFrame."""
     try:
         df = pd.read_csv(csv_file_path, sep=sep, index_col=index_col)
-        print("Data loaded successfully.")
+        # st.success("Data loaded successfully.")
         return df
     except Exception as e:
-        print(f"Error loading the data: {e}")
+        st.error(f"Error loading the data: {e}")
         return None
+
 
 # Load product metadata and user ratings data
 product_metadata_path = 'Makeup_Products_Metadata.csv'  # Update path as necessary
 user_ratings_path = 'User_review_data.csv'  # Update path as necessary
 
-products_df = load_data(product_metadata_path, sep=';')
-ratings_df = load_data(user_ratings_path, sep=';', index_col='User')
+products_dfs = load_data(product_metadata_path, sep=';')
+ratings_dfs = load_data(user_ratings_path, sep=';', index_col='User')
 
-# Preprocessing product data
-products_df = products_df[['Product ID', 'Product Name', 'Product Description']]
-products_df.columns = ['product_id', 'name', 'description']
+products_df= products_dfs[['Product ID','Product Name', 'Product Price [SEK]','Product Description']]
+products_df.columns = ['product_id', 'name', 'price', 'description']
+products_df.head()
 
-# Preprocessing ratings data according to the new specification
-ratings_df = ratings_df.reset_index().melt(id_vars='User', var_name='Item', value_name='Rating')
+ratings_df = ratings_dfs.reset_index().melt(id_vars='User', var_name='Item', value_name='Rating')
 ratings_df = ratings_df[ratings_df['Rating'] > 0]
+
+# Convert 'user_name' to a categorical type and then to numerical codes
 ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
-ratings_df = ratings_df.rename(columns={'User': 'user_name', 'Item': 'product_id', 'Rating': 'rating'})
+ratings_df.columns = ['user_name', 'product_id', 'rating', 'user_id']
 user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
 
-# Collaborative Filtering with Username
-def collaborative_filtering_with_username(ratings_df):
-    unique_users = ratings_df['user_name'].unique()
-    user_ids = {user: i for i, user in enumerate(unique_users)}
-    ratings_df['user_id'] = ratings_df['user_name'].apply(lambda x: user_ids[x])
+def collaborative_filtering(ratings_df):
+    """Adapts the collaborative filtering process for Streamlit."""
+    with st.expander("Show Collaborative Filtering Details"):
+        st.write("Starting Collaborative Filtering with SVD algorithm...")
 
-    reader = Reader(rating_scale=(1, 5))
-    data = Dataset.load_from_df(ratings_df[['user_id', 'product_id', 'rating']], reader)
-    trainset, testset = train_test_split(data, test_size=0.25)
+        # Data preparation
+        reader = Reader(rating_scale=(1, 5))
+        data = Dataset.load_from_df(ratings_df[['user_id', 'product_id', 'rating']], reader)
 
-    param_grid = {'n_epochs': [5, 10], 'lr_all': [0.002, 0.005], 'reg_all': [0.02, 0.04]}
-    gs = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=3)
-    gs.fit(data)
+        # Split data into training and test set
+        trainset, testset = train_test_split(data, test_size=0.25)
 
-    algo = gs.best_estimator['rmse']
-    trainset = data.build_full_trainset()
-    algo.fit(trainset)
+        # GridSearchCV for SVD hyperparameters
+        st.write("Tuning hyperparameters...")
+        param_grid = {'n_epochs': [5, 10], 'lr_all': [0.002, 0.005], 'reg_all': [0.02, 0.04]}
+        gs = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=3)
+        gs.fit(data)
 
-    return algo, user_ids
+        # Best SVD model
+        algo = gs.best_estimator['rmse']
+        st.write(f"Best hyperparameters: {gs.best_params['rmse']}")
 
-algo, user_name_to_id = collaborative_filtering_with_username(ratings_df)
+        # Re-train on the full dataset
+        trainset = data.build_full_trainset()
+        algo.fit(trainset)
 
-# Precision and Recall at K
+        # Predict on the test set and calculate precision and recall
+        predictions = algo.test(testset)
+        precision, recall = precision_recall_at_k(predictions)
+
+        avg_precision = np.mean(list(precision.values()))
+        avg_recall = np.mean(list(recall.values()))
+
+        st.write(f"Average Precision: {avg_precision:.2f}")
+        st.write(f"Average Recall: {avg_recall:.2f}")
+
+        return algo
+
 def precision_recall_at_k(predictions, k=5, threshold=3.5):
+    """Calculates precision and recall at k for given predictions."""
+    # Identical to the original function, no changes required here.
     user_est_true = defaultdict(list)
     for uid, _, true_r, est, _ in predictions:
         user_est_true[uid].append((est, true_r))
@@ -136,113 +145,88 @@ def precision_recall_at_k(predictions, k=5, threshold=3.5):
 
     return precision, recall
 
-def find_similar_products_by_description(query, products_df, k=5):
+
+# Calculate similarity for content-based filtering
+def calculate_similarity(products_df):
     tfidf = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf.fit_transform(products_df['description'])
-    query_vec = tfidf.transform([query])
-    cosine_sim = cosine_similarity(query_vec, tfidf_matrix)
+    cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+    return cosine_sim
+
+# Hybrid Recommendation Function
+def hybrid_recommendation(user_id, products, ratings, algo, k=5):
+    # Logic as provided
+    # Check if user_id exists to provide CF predictions
+    cf_predictions = [algo.predict(user_id, pid).est for pid in products['product_id']]
+    products['cf_score'] = cf_predictions
     
-    if isinstance(cosine_sim, np.ndarray):
-        cosine_sim = cosine_sim.flatten()
-        top_indices = cosine_sim.argsort()[-k:][::-1]
-        return products_df.iloc[top_indices][['name', 'product_id']]
-    else:
-        st.error("Error computing cosine similarity.")
-        return pd.DataFrame()
+    # Calculate CBF similarity
+    cbf_similarity = calculate_similarity(products)
+    products['cbf_score'] = cbf_similarity.mean(axis=1)
+    
+    # Hybrid score
+    products['hybrid_score'] = (products['cf_score'] + products['cbf_score']) / 2
+    
+    # Sort and clean up
+    recommended_products = products.sort_values('hybrid_score', ascending=False).head(k)
+    products.drop(columns=['cf_score', 'cbf_score', 'hybrid_score'], inplace=True, errors='ignore')
+    
+    return recommended_products
 
-# Hybrid Recommendation
-def hybrid_recommendation(username, k=5, ratings_df=ratings_df, user_name_to_id=user_name_to_id):
-    products_df_copy = products_df[['product_id', 'name', 'description']].copy()
+    
+# Train the model
+algo = collaborative_filtering(ratings_df)
 
-    user_id = user_name_to_id.get(username.lower())
-    if user_id is None:
-        return pd.DataFrame()
-
-    user_ratings = ratings_df[ratings_df['user_name'].str.lower() == username.lower()]
-    user_ratings = user_ratings.set_index('product_id')['rating'].to_dict()
-
+def find_similar_products_by_description(query, products, k=5):
+    """Find similar products based on description."""
     tfidf = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = tfidf.fit_transform(products_df_copy['description'])
-    product_ids = products_df_copy['product_id'].tolist()
+    tfidf_matrix = tfidf.fit_transform(products['description'])
+    query_vec = tfidf.transform([query])
+    cosine_sim = cosine_similarity(query_vec, tfidf_matrix).flatten()
+    top_indices = cosine_sim.argsort()[-k:][::-1]
+    similar_products = products.iloc[top_indices][['name', 'product_id']]
+    similar_products['Relevance Score'] = cosine_sim[top_indices]
+    similar_products.columns = ['Name', 'Product ID', 'Relevance Score']
+    return similar_products
 
-    # CBF scores
-    cbf_scores = np.zeros(len(products_df_copy))
-    similarity_matrix = cosine_similarity(tfidf_matrix)
-    for pid, rating in user_ratings.items():
-        if pid in product_ids:
-            idx = product_ids.index(pid)
-            similarities = similarity_matrix[idx]
-            for i, sim in enumerate(similarities):
-                if rating >= 3.5:
-                    cbf_scores[i] += sim * 0.5
-                else:
-                    cbf_scores[i] -= sim * 0.5
 
-    # CF scores
-    cf_scores = np.array([algo.predict(user_id, pid).est for pid in product_ids])
+def personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, k=5):
+    """Generate personalized product recommendations."""
+    user_id = user_name_to_id.get(user_input.lower())
+    if user_id is not None:
+        st.markdown(f"<p class='success-message'>Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:</p>", unsafe_allow_html=True)
+        recommended_products = hybrid_recommendation(user_id, products.copy(), ratings, algo, k)
+        recommended_products = recommended_products[['name', 'product_id', 'hybrid_score']]
+        recommended_products.columns = ['Name', 'Product ID', 'Relevance Score']
+        st.table(recommended_products)
+    else:
+        st.markdown("<p class='warning-message'>User not found or you're a new user. Let's find some products for you.</p>", unsafe_allow_html=True)
 
-    # Hybrid scores
-    hybrid_scores = cf_scores * 0.5 + cbf_scores * 0.5
-    products_df_copy['hybrid_score'] = hybrid_scores
+# Main interaction flow adapted for Streamlit with improved user interface
+def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
+    """Main interaction flow adapted for Streamlit."""
 
-    # Sort by hybrid_score and return the first k rows
-    recommended_products = products_df_copy.sort_values(by='hybrid_score', ascending=False).head(k)
+    # Separate the functionalities more clearly with explicit prompts and keys
+    # For personalized recommendations
+    st.markdown("### Exclusive Recommendations Tailored for You at Chimp AI")
+    user_input = st.text_input("Enter your name to receive personalized product recommendations.", key='user_input_name')
 
-    return recommended_products.set_index('product_id')[['name', 'product_id', 'hybrid_score']]
+    if user_input:
+        personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
 
-    # CF scores
-    cf_scores = np.array([algo.predict(user_id, pid).est for pid in product_ids])
+    st.markdown("### New User? Dive Into Your Personalized Product Exploration Journey Here!")
+    query = st.text_input("Looking for something specific? Enter a product description or name to find similar products.", key='product_search')
 
-    # Hybrid scores
-    hybrid_scores = cf_scores * 0.5 + cbf_scores * 0.5
-    products_df_copy['hybrid_score'] = hybrid_scores
+    if query:
+        similar_products = find_similar_products_by_description(query, products, 5)
+        if not similar_products.empty:
+            st.markdown("<p class='success-message'>Top relevant products to your description input:</p>", unsafe_allow_html=True)
+            st.table(similar_products)
+        else:
+            st.markdown("<p class='warning-message'>No similar products found.</p>", unsafe_allow_html=True)
 
-    # Sort by hybrid_score and return the first k rows
-    recommended_products = products_df_copy.sort_values(by='hybrid_score', ascending=False).head(k)
+if 'restart' not in st.session_state:
+    st.session_state['restart'] = False
 
-    return recommended_products[['name', 'product_id', 'hybrid_score']]
-
-    # CF scores
-    cf_scores = np.array([algo.predict(user_id, pid).est for pid in product_ids])
-    
-    # Hybrid scores
-    hybrid_scores = cf_scores * 0.5 + cbf_scores * 0.5
-    products_df['hybrid_score'] = hybrid_scores
-
-    return products_df.sort_values(by='hybrid_score', ascending=False).head(k)
-
-if not products_df.empty and not ratings_df.empty:
-    # Main interaction function adjusted for Streamlit
-    # Initialize a counter for generating unique keys
-    # Add this line before the main_interaction_streamlit function
-    widget_counter = itertools.count()
-    
-    # Main interaction function adjusted for Streamlit
-    def main_interaction_streamlit(products_df, ratings_df, user_name_to_id):
-        user_input_key = next(widget_counter)
-        user_query_key = next(widget_counter)
-    
-        user_input = st.text_input("Enter your name for personalized recommendations or explore as a guest:", key=user_input_key)
-        query = st.text_input("Looking for something specific? Enter keywords to find related products:", key=user_query_key)
-    
-        if user_input:
-            if user_input.lower() != 'guest':
-                st.write(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
-                recommended_products = hybrid_recommendation(user_input)
-                st.dataframe(recommended_products[['name', 'product_id', 'hybrid_score']].set_index('product_id'))
-            else:
-                st.write("Explore our products as a guest.")
-    
-        if query:
-            similar_products = find_similar_products_by_description(query, products_df)
-            st.write("Top relevant products to your description input:")
-            st.dataframe(similar_products)
-
-    if __name__ == "__main__":
-        main_interaction_streamlit(products_df, ratings_df, user_name_to_id)
-else:
-    st.error("Failed to load data. Please check the file paths and try again.")
-
-if __name__ == "__main__":
-    # Ensure collaborative_filtering_with_username and other necessary functions are defined and called correctly
-    main_interaction_streamlit(products_df, ratings_df, user_name_to_id)
+if not st.session_state['restart']:
+    main_interaction_streamlit(products_df, ratings_df, algo, user_name_to_id)
