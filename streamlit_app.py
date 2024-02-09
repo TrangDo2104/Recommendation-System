@@ -199,12 +199,13 @@ if not products_df.empty and not ratings_df.empty:
                 st.write("Explore our products as a guest.")
     
         query_key = "query"
-        query = st.text_input("Looking for something specific? Enter keywords to find related products:", key=query_key)
+        query = st.text_input("Looking for something specific? Enter keywords to find related products:", key=user_input_key + query_key)
         
         if query:
             similar_products = find_similar_products_by_description(query, products_df)
             st.write("Top relevant products to your description input:")
             st.dataframe(similar_products)
+
 
     if __name__ == "__main__":
         main_interaction_streamlit(products_df, ratings_df, user_name_to_id)
