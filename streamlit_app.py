@@ -180,11 +180,6 @@ def hybrid_recommendation(username, k=5):
     return products_df.sort_values(by='hybrid_score', ascending=False).head(k)
 
 if not products_df.empty and not ratings_df.empty:
-    products_df = preprocess_product_data(products_df)
-    ratings_df, user_name_to_id = preprocess_ratings_data(ratings_df)
-
-    # Collaborative filtering with username, precision_recall_at_k, hybrid_recommendation, and find_similar_products_by_description functions remain unchanged
-
     # Main interaction function adjusted for Streamlit
     def main_interaction_streamlit(products_df, ratings_df, user_name_to_id):
         # User input for personalized recommendations
