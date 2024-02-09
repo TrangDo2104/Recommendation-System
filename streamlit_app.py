@@ -213,7 +213,7 @@ if not products_df.empty and not ratings_df.empty:
 
 
     if __name__ == "__main__":
-    main_interaction_streamlit(products_df, ratings_df, user_name_to_id)
+        main_interaction_streamlit(products_df, ratings_df, user_name_to_id)
 else:
     st.error("Failed to load data. Please check the file paths and try again.")
 
