@@ -121,3 +121,22 @@ if product_description_query:
         st.write(similar_products)
     else:
         st.write("No similar products found based")
+
+def find_users_without_high_rated_products(ratings_df, threshold=3.5):
+    """Find users who do not have any products rated above the specified threshold."""
+    # Group by user_name, filter those where max rating is <= threshold
+    users_max_rating = ratings_df.groupby('user_name')['rating'].max()
+    users_without_high_ratings = users_max_rating[users_max_rating <= threshold].index.tolist()
+
+    return users_without_high_ratings
+
+# Assuming 'ratings_df' is already defined and contains the columns 'user_name' and 'rating'
+users_without_high_ratings = find_users_without_high_rated_products(ratings_df)
+
+# Display the result in Streamlit
+if users_without_high_ratings:
+    st.write("Users without any high-rated products (rating > 3.5):")
+    st.write(users_without_high_ratings)
+else:
+    st.write("All users have at least one product rated above 3.5.")
+
