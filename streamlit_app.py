@@ -151,7 +151,7 @@ def find_similar_products_by_description(query, products_df, k=5):
         return pd.DataFrame()
 
 # Hybrid Recommendation
-def hybrid_recommendation(username, k=5):
+def hybrid_recommendation(username, k=5, ratings_df=ratings_df, user_name_to_id=user_name_to_id):
     products_df_copy = products_df[['product_id', 'name', 'description']].copy()
 
     user_id = user_name_to_id.get(username.lower())
@@ -177,6 +177,18 @@ def hybrid_recommendation(username, k=5):
                     cbf_scores[i] += sim * 0.5
                 else:
                     cbf_scores[i] -= sim * 0.5
+
+    # CF scores
+    cf_scores = np.array([algo.predict(user_id, pid).est for pid in product_ids])
+
+    # Hybrid scores
+    hybrid_scores = cf_scores * 0.5 + cbf_scores * 0.5
+    products_df_copy['hybrid_score'] = hybrid_scores
+
+    # Sort by hybrid_score and return the first k rows
+    recommended_products = products_df_copy.sort_values(by='hybrid_score', ascending=False).head(k)
+
+    return recommended_products[['name', 'product_id', 'hybrid_score']]
 
     # CF scores
     cf_scores = np.array([algo.predict(user_id, pid).est for pid in product_ids])
