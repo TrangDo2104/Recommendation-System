@@ -58,6 +58,10 @@ def find_similar_products_by_description(query, products_df, k=5):
 
 def get_global_top_rated_products(ratings_df, products_df, k=5):
     """Get top-rated products globally based on average rating >= 4."""
+    # Ensure product_id is of the same data type in both DataFrames
+    ratings_df['product_id'] = ratings_df['product_id'].astype(str)
+    products_df['product_id'] = products_df['product_id'].astype(str)
+
     # Calculate average rating for each product and count of ratings >= 4
     avg_ratings = ratings_df.groupby('product_id').agg(
         avg_rating=('rating', 'mean'),
