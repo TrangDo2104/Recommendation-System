@@ -87,43 +87,43 @@ ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
 ratings_df.columns = ['user_name', 'product_id', 'rating', 'user_id']
 user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
 
-def collaborative_filtering(ratings_df):
-    """Adapts the collaborative filtering process for Streamlit."""
-    with st.expander("Show Collaborative Filtering Details"):
-        st.write("Starting Collaborative Filtering with SVD algorithm...")
+# def collaborative_filtering(ratings_df):
+#     """Adapts the collaborative filtering process for Streamlit."""
+#     with st.expander("Show Collaborative Filtering Details"):
+#         st.write("Starting Collaborative Filtering with SVD algorithm...")
 
-        # Data preparation
-        reader = Reader(rating_scale=(1, 5))
-        data = Dataset.load_from_df(ratings_df[['user_id', 'product_id', 'rating']], reader)
+#         # Data preparation
+#         reader = Reader(rating_scale=(1, 5))
+#         data = Dataset.load_from_df(ratings_df[['user_id', 'product_id', 'rating']], reader)
 
-        # Split data into training and test set
-        trainset, testset = train_test_split(data, test_size=0.25)
+#         # Split data into training and test set
+#         trainset, testset = train_test_split(data, test_size=0.25)
 
-        # GridSearchCV for SVD hyperparameters
-        st.write("Tuning hyperparameters...")
-        param_grid = {'n_epochs': [5, 10], 'lr_all': [0.002, 0.005], 'reg_all': [0.02, 0.04]}
-        gs = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=3)
-        gs.fit(data)
+#         # GridSearchCV for SVD hyperparameters
+#         st.write("Tuning hyperparameters...")
+#         param_grid = {'n_epochs': [5, 10], 'lr_all': [0.002, 0.005], 'reg_all': [0.02, 0.04]}
+#         gs = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=3)
+#         gs.fit(data)
 
-        # Best SVD model
-        algo = gs.best_estimator['rmse']
-        st.write(f"Best hyperparameters: {gs.best_params['rmse']}")
+#         # Best SVD model
+#         algo = gs.best_estimator['rmse']
+#         st.write(f"Best hyperparameters: {gs.best_params['rmse']}")
 
-        # Re-train on the full dataset
-        trainset = data.build_full_trainset()
-        algo.fit(trainset)
+#         # Re-train on the full dataset
+#         trainset = data.build_full_trainset()
+#         algo.fit(trainset)
 
-        # Predict on the test set and calculate precision and recall
-        predictions = algo.test(testset)
-        precision, recall = precision_recall_at_k(predictions)
+#         # Predict on the test set and calculate precision and recall
+#         predictions = algo.test(testset)
+#         precision, recall = precision_recall_at_k(predictions)
 
-        avg_precision = np.mean(list(precision.values()))
-        avg_recall = np.mean(list(recall.values()))
+#         avg_precision = np.mean(list(precision.values()))
+#         avg_recall = np.mean(list(recall.values()))
 
-        st.write(f"Average Precision: {avg_precision:.2f}")
-        st.write(f"Average Recall: {avg_recall:.2f}")
+#         st.write(f"Average Precision: {avg_precision:.2f}")
+#         st.write(f"Average Recall: {avg_recall:.2f}")
 
-        return algo
+#         return algo
 
 def precision_recall_at_k(predictions, k=5, threshold=3.5):
     """Calculates precision and recall at k for given predictions."""
@@ -146,67 +146,80 @@ def precision_recall_at_k(predictions, k=5, threshold=3.5):
     return precision, recall
 
 
-# Function to calculate similarity based on user preferences
-def calculate_user_preference_similarity(user_id, products, ratings, tfidf_matrix):
-    # Filter ratings for the current user
-    user_ratings = ratings[ratings['user_id'] == user_id]
-    
-    # Determine positively and negatively rated product_ids
-    positive_products = user_ratings[user_ratings['rating'] > 3.5]['product_id']
-    negative_products = user_ratings[user_ratings['rating'] <= 3.5]['product_id']
-    
-    # Calculate similarity scores for all products
-    product_similarities = cosine_similarity(tfidf_matrix, tfidf_matrix)
-    
-    # Initialize an array to store adjusted CBF scores
-    adjusted_scores = np.zeros(tfidf_matrix.shape[0])
-    
-    # Adjust scores based on positive ratings
-    for product_id in positive_products:
-        product_indices = products.index[products['product_id'] == product_id].tolist()
-        if product_indices:  # Check if the list is not empty
-            product_idx = product_indices[0]
-            similarity_scores = product_similarities[product_idx]
+def collaborative_filtering_with_username(ratings_df):
+    """Performs collaborative filtering using the SVD algorithm, handling usernames."""
+    # Map usernames to unique IDs
+    unique_users = ratings_df['username'].unique()
+    user_ids = {user: i for i, user in enumerate(unique_users)}
+    ratings_df['user_id'] = ratings_df['username'].apply(lambda x: user_ids[x])
 
-            # Identify significantly similar products (e.g., above 75th percentile of similarity)
-            threshold = np.percentile(similarity_scores, 75)
-            adjusted_scores += np.where(similarity_scores > threshold, similarity_scores, 0)
-
-    # Similarly, add checks for negative_products
-    for product_id in negative_products:
-        product_indices = products.index[products['product_id'] == product_id].tolist()
-        if product_indices:  # Check if the list is not empty
-            product_idx = product_indices[0]
-            similarity_scores = product_similarities[product_idx]
-
-            # Identify significantly similar products (e.g., above 75th percentile of similarity)
-            threshold = np.percentile(similarity_scores, 75)
-            adjusted_scores -= np.where(similarity_scores > threshold, similarity_scores, 0)
-
+    # Data preparation
+    reader = Reader(rating_scale=(1, 5))
+    data = Dataset.load_from_df(ratings_df[['user_id', 'product_id', 'rating']], reader)
     
-    return adjusted_scores
+    # Split data into training and test set
+    trainset, testset = train_test_split(data, test_size=0.25)
 
-# Enhanced Hybrid Recommendation Function
-def hybrid_recommendation(user_id, products, ratings, algo, k=5):
-    # Calculate TF-IDF matrix for all products
+    # Hyperparameter tuning with GridSearchCV
+    param_grid = {'n_epochs': [5, 10], 'lr_all': [0.002, 0.005], 'reg_all': [0.02, 0.04]}
+    gs = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=3)
+    gs.fit(data)
+    
+    # Best model and retraining
+    algo = gs.best_estimator['rmse']  # This is the corrected line
+    trainset = data.build_full_trainset()
+    algo.fit(trainset)
+
+    # Predict on the test set and calculate precision and recall
+    predictions = algo.test(testset)
+    precision, recall = precision_recall_at_k(predictions)
+
+    avg_precision = np.mean(list(precision.values()))
+    avg_recall = np.mean(list(recall.values()))
+
+    st.write(f"Average Precision: {avg_precision:.2f}")
+    st.write(f"Average Recall: {avg_recall:.2f}")
+    return algo, user_ids, trainset
+
+def calculate_cbf_scores(tfidf_matrix, product_ids, user_ratings):
+    product_indices = {pid: idx for idx, pid in enumerate(product_ids)}
+    cbf_scores = np.zeros(tfidf_matrix.shape[0])
+    similarity_matrix = cosine_similarity(tfidf_matrix)
+
+    for pid, rating in user_ratings.items():
+        if pid in product_indices:
+            idx = product_indices[pid]
+            similarities = similarity_matrix[idx]
+            high_similarity_indices = np.where(similarities > 0.6)[0]
+            if rating >= 3.5:
+                cbf_scores[high_similarity_indices] += 0.5 * similarities[high_similarity_indices]
+            else:
+                cbf_scores[high_similarity_indices] -= 0.5 * similarities[high_similarity_indices]
+
+    return cbf_scores
+
+def hybrid_recommendation(username, products, ratings, algo, user_ids):
+    # Convert product descriptions into TF-IDF vectors
     tfidf = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf.fit_transform(products['description'])
+    product_ids = products['product_id'].tolist()
+
+    # Get user ratings
+    user_ratings = ratings[ratings['username'] == username].set_index('product_id')['rating'].to_dict()
+
+    # Calculate CBF scores
+    cbf_scores = calculate_cbf_scores(tfidf_matrix, product_ids, user_ratings)
+
+    # Generate CF scores using the SVD model
+    user_id = user_ids[username]
+    cf_scores = [algo.predict(user_id, pid).est for pid in products['product_id']]
     
-    # CF predictions
-    cf_predictions = [algo.predict(user_id, pid).est for pid in products['product_id']]
-    products['cf_score'] = cf_predictions
-    
-    # Calculate adjusted CBF similarity based on user preferences
-    cbf_scores = calculate_user_preference_similarity(user_id, products, ratings, tfidf_matrix)
+    # Calculate hybrid scores
+    products['cf_score'] = cf_scores
     products['cbf_score'] = cbf_scores
-    
-    # Hybrid score
-    products['hybrid_score'] = 0.2 * (products['cf_score'] + 0.8 * products['cbf_score'])
-    # Sort and clean up
-    recommended_products = products.sort_values('hybrid_score', ascending=False).head(k)
-    products.drop(columns=['cf_score', 'cbf_score', 'hybrid_score'], inplace=True, errors='ignore')
-    
-    return recommended_products
+    products['hybrid_score'] = products['cf_score'] * 0.5 + products['cbf_score'] * 0.5
+
+    return products[['product_id', 'cf_score', 'cbf_score', 'hybrid_score']].sort_values(by='hybrid_score', ascending=False)
 
 
     
