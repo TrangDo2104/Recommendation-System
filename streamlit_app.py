@@ -201,13 +201,13 @@ def hybrid_recommendation(user_id, products, ratings, algo, k=5):
     products['cbf_score'] = cbf_scores
     
     # Hybrid score
-    products['hybrid_score'] = (products['cf_score'] + products['cbf_score']) / 2
-    
+    products['hybrid_score'] = 0.2 * (products['cf_score'] + 0.8 * products['cbf_score'])
     # Sort and clean up
     recommended_products = products.sort_values('hybrid_score', ascending=False).head(k)
     products.drop(columns=['cf_score', 'cbf_score', 'hybrid_score'], inplace=True, errors='ignore')
     
     return recommended_products
+
 
     
 # Train the model
