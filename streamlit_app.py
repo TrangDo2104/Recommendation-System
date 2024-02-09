@@ -55,42 +55,43 @@ st.markdown("""
 # Streamlit UI components
 st.title("⭐ Welcome To Chimp AI's Recommendation System ⭐")
 
-# Load product metadata and user ratings data
+import streamlit as st
+import pandas as pd
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from surprise import Dataset, Reader, SVD
+from surprise.model_selection import train_test_split, GridSearchCV
+from collections import defaultdict
+
+# Define a function to load data safely
 @st.cache_data
-def load_data(csv_file_path, sep=';', index_col=None):
+def load_data(csv_file_path, sep=','):
     """Loads data from a CSV file and returns a DataFrame."""
     try:
-        df = pd.read_csv(csv_file_path, sep=sep, index_col=index_col)
-        print("Data loaded successfully.")
+        df = pd.read_csv(csv_file_path, sep=sep)
+        st.success("Data loaded successfully.")
         return df
     except Exception as e:
-        print(f"Error loading the data: {e}")
-        return None
+        st.error(f"Error loading the data: {e}")
+        return pd.DataFrame()
 
-# Load product metadata and user ratings data
-product_metadata_path = 'Makeup_Products_Metadata.csv'  # Update path as necessary
-user_ratings_path = 'User_review_data.csv'  # Update path as necessary
-
-products_df = load_data(product_metadata_path, sep=';')
-ratings_df = load_data(user_ratings_path, sep=';', index_col='User')
-
-# Update paths as necessary
-product_metadata_path = 'Makeup_Products_Metadata.csv'
-user_ratings_path = 'User_review_data.csv'
+# Sample paths - replace with actual paths
+product_metadata_path = 'path_to/Makeup_Products_Metadata.csv'
+user_ratings_path = 'path_to/User_review_data.csv'
 
 products_df = load_data(product_metadata_path)
 ratings_df = load_data(user_ratings_path)
 
-# Preprocessing Data
+# Preprocessing product data
 products_df = products_df[['Product ID', 'Product Name', 'Product Description']]
 products_df.columns = ['product_id', 'name', 'description']
 
-ratings = ratings_df.reset_index().melt(id_vars='User', var_name='Item', value_name='Rating')
-ratings = ratings[ratings['Rating'] > 0]
-
-# Convert 'user_name' to a categorical type and then to numerical codes
-ratings['user_id'] = ratings['User'].astype('category').cat.codes
-ratings.columns = ['user_name', 'product_id', 'rating', 'user_id']
+# Preprocessing ratings data according to the new specification
+ratings_df = ratings_df.reset_index().melt(id_vars='User', var_name='Item', value_name='Rating')
+ratings_df = ratings_df[ratings_df['Rating'] > 0]
+ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
+ratings_df = ratings_df.rename(columns={'User': 'user_name', 'Item': 'product_id', 'Rating': 'rating'})
 user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
 
 # Collaborative Filtering with Username
@@ -178,26 +179,31 @@ def hybrid_recommendation(username, k=5):
 
     return products_df.sort_values(by='hybrid_score', ascending=False).head(k)
 
-# Main Interaction Flow
-def main_interaction_streamlit():
-    user_input = st.text_input("Enter your name for personalized recommendations or explore as a guest:")
+# Main interaction function adjusted for Streamlit
+def main_interaction_streamlit(products_df, ratings_df, user_name_to_id):
+    st.title("Chimp AI: Personalized Product Recommendations")
 
-    if user_input:
-        if user_input.lower() != 'guest':
+    user_input = st.text_input("Enter your name for personalized recommendations or explore as a guest:", '')
+
+    if user_input.lower() != 'guest' and user_input:
+        if user_input.lower() in user_name_to_id:
+            # Personalized recommendations
             st.write(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
-            recommended_products = hybrid_recommendation(user_input)
-            st.dataframe(recommended_products[['name', 'product_id', 'hybrid_score']])
+            recommended_products = hybrid_recommendation(user_input, products_df, ratings_df, algo, user_name_to_id)
+            st.dataframe(recommended_products)
         else:
-            st.write("Explore our products as a guest.")
+            st.write("User not found or you're a new user. Let's find some products for you.")
+    elif user_input.lower() == 'guest':
+        st.write("Explore our products as a guest.")
 
-    query = st.text_input("Looking for something specific? Enter keywords to find related products:")
-    
+    # Assuming the function 'find_similar_products_by_description' is defined
+    query = st.text_input("Looking for something specific? Enter keywords to find related products:", '')
+
     if query:
-        similar_products = find_similar_products_by_description(query)
+        similar_products = find_similar_products_by_description(query, products_df)
         st.write("Top relevant products to your description input:")
         st.dataframe(similar_products)
 
 if __name__ == "__main__":
-    main_interaction_streamlit()
-
-
+    # Ensure collaborative_filtering_with_username and other necessary functions are defined and called correctly
+    main_interaction_streamlit(products_df, ratings_df, user_name_to_id)
