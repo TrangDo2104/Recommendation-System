@@ -189,22 +189,23 @@ if not products_df.empty and not ratings_df.empty:
     # Initialize a counter for generating unique keys
     widget_counter = count()
     
+    # Main interaction function adjusted for Streamlit
     def main_interaction_streamlit(products_df, ratings_df, user_name_to_id):
-        # Generate a unique key for the user input widget
+        widget_counter = count()
+    
         user_input_key = next(widget_counter)
+        user_query_key = next(widget_counter)
+    
         user_input = st.text_input("Enter your name for personalized recommendations or explore as a guest:", key=user_input_key)
+        query = st.text_input("Looking for something specific? Enter keywords to find related products:", key=user_query_key)
     
         if user_input:
             if user_input.lower() != 'guest':
                 st.write(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
-                recommended_products = hybrid_recommendation(user_input, products_df, ratings_df, user_name_to_id)
+                recommended_products = hybrid_recommendation(user_input, k=5, products_df=products_df, ratings_df=ratings_df, user_name_to_id=user_name_to_id)
                 st.dataframe(recommended_products[['name', 'product_id', 'hybrid_score']])
             else:
                 st.write("Explore our products as a guest.")
-    
-        # Generate a unique key for the query input widget
-        query_key = next(widget_counter)
-        query = st.text_input("Looking for something specific? Enter keywords to find related products:", key=query_key)
     
         if query:
             similar_products = find_similar_products_by_description(query, products_df)
