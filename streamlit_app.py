@@ -66,22 +66,22 @@ from collections import defaultdict
 
 # Define a function to load data safely
 @st.cache_data
-def load_data(csv_file_path, sep=','):
+def load_data(csv_file_path, sep=';', index_col=None):
     """Loads data from a CSV file and returns a DataFrame."""
     try:
-        df = pd.read_csv(csv_file_path, sep=sep)
-        st.success("Data loaded successfully.")
+        df = pd.read_csv(csv_file_path, sep=sep, index_col=index_col)
+        print("Data loaded successfully.")
         return df
     except Exception as e:
-        st.error(f"Error loading the data: {e}")
-        return pd.DataFrame()
+        print(f"Error loading the data: {e}")
+        return None
 
-# Sample paths - replace with actual paths
-product_metadata_path = 'Makeup_Products_Metadata.csv'
-user_ratings_path = 'User_review_data.csv'
+# Load product metadata and user ratings data
+product_metadata_path = 'Makeup_Products_Metadata.csv'  # Update path as necessary
+user_ratings_path = 'User_review_data.csv'  # Update path as necessary
 
-products_df = load_data(product_metadata_path)
-ratings_df = load_data(user_ratings_path)
+products_df = load_data(product_metadata_path, sep=';')
+ratings_df = load_data(user_ratings_path, sep=';', index_col='User')
 
 # Preprocessing product data
 products_df = products_df[['Product ID', 'Product Name', 'Product Description']]
