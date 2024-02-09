@@ -156,6 +156,6 @@ if st.button('Get Product-based Recommendations'):
         st.write("Please enter a product name.")
 
 if st.button('Train and Evaluate Model'):
-    algo, avg_precision, avg_recall = collaborative_filtering_with_evaluation(ratings_df)
+    algo, avg_precision, avg_recall = collaborative_filtering(ratings_df)
     st.write(f"Average Precision: {avg_precision:.2f}")
     st.write(f"Average Recall: {avg_recall:.2f}")
