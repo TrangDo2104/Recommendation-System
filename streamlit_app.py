@@ -132,6 +132,8 @@ def hybrid_recommendation(user_id, product_name, products_df, ratings_df, algo, 
 
 # Train the model
 algo = collaborative_filtering(ratings_df)
+st.write(f"Type of algo after assignment: {type(algo)}")  # This should not be 'int'
+
 
 def find_similar_products_by_description(query, products, k=5):
     """Find similar products based on description."""
