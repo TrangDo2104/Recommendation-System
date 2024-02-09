@@ -109,7 +109,7 @@ def find_similar_products_by_description(query, products, k=5):
 # Recommendations Based on User Ratings
 def recommend_for_user(user_id, ratings, products, k=5):
     """Recommend products based on a user's past high ratings."""
-    user_ratings = ratings[ratings['User'] == user_id]
+    user_ratings = ratings_df[ratings_df['user_name'] == user_id]
     high_rated_products = user_ratings[user_ratings['Rating'] > 3.5]['Product ID'].unique()
 
     if len(high_rated_products) == 0:
