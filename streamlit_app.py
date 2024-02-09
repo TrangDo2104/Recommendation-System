@@ -21,7 +21,9 @@ def load_data(csv_file_path, sep=';', index_col=None):
         return None
 
 # Load your data here
-products_df = load_data('Makeup_Products_Metadata.csv', sep=';')
+products_dfs = load_data('Makeup_Products_Metadata.csv', sep=';')
+products_df= products_dfs[['Product ID','Product Name', 'Product Price [SEK]','Product Description']]
+products_df.columns = ['product_id', 'name', 'price', 'description']
 ratings_df = load_data('User_review_data.csv', sep=';')
 
 # Assuming you preprocess your data here and create ratings_df, products_df
