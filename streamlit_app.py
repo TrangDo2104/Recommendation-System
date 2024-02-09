@@ -146,30 +146,46 @@ product_input = st.text_input("Enter product name (for product-based recommendat
 # Train the model
 algo = collaborative_filtering(ratings_df)
 
-# Button for user-based recommendations
-if st.button('Get User-based Recommendations'):
+def find_similar_products_by_description(query, products, k=5):
+    """Find similar products based on description."""
+    tfidf = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = tfidf.fit_transform(products['description'])
+    query_vec = tfidf.transform([query])
+    cosine_sim = cosine_similarity(query_vec, tfidf_matrix).flatten()
+    top_indices = cosine_sim.argsort()[-k:][::-1]
+    return products.iloc[top_indices][['product_id', 'name']]
+
+def personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, k=5):
+    """Generate personalized product recommendations."""
+    user_id = user_name_to_id.get(user_input.lower())
+    if user_id is not None:
+        st.write(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
+        recommended_products = hybrid_recommendation(user_id, products.copy(), ratings, algo, k)
+        st.write(recommended_products[['name', 'hybrid_score']])
+    else:
+        st.write("User not found or you're a new user. Let's find some products for you.")
+
+def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
+    """Main interaction flow adapted for Streamlit."""
+    user_input = st.text_input("Type 'guest' to continue as a guest or enter your name for personalized recommendations:", '')
+    
     if user_input:
-        user_id = user_name_to_id.get(user_input.lower(), None)
-        if user_id is not None:
-            recommendations = hybrid_recommendation(user_id, None, products_df.copy(), ratings_df, algo)
-            st.write(f"Recommendations for user: {user_input}")
-            st.table(recommendations[['name', 'hybrid_score']])
+        personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
+    
+    query = st.text_input("What are you looking for? Enter a product description or name:", '')
+    
+    if query:
+        similar_products = find_similar_products_by_description(query, products, 5)
+        if not similar_products.empty:
+            st.write("Top relevant products to your description input:")
+            st.table(similar_products)
         else:
-            st.write("User not found. Please enter a valid username.")
-    else:
-        st.write("Please enter a username.")
+            st.write("No similar products found.")
 
-# Button for product-based recommendations
-if st.button('Get Product-based Recommendations'):
-    if product_input:
-        recommendations = hybrid_recommendation(None, product_input, products_df.copy(), ratings_df, algo)
-        if not recommendations.empty:
-            st.write(f"Products similar to {product_input}:")
-            st.table(recommendations[['name', 'hybrid_score']])
-        else:
-            st.write(f"No similar products found for {product_input}.")
-    else:
-        st.write("Please enter a product name.")
+# Place this within your Streamlit app code structure
+# Ensure all necessary functions and data are defined and available
+if 'restart' not in st.session_state:
+    st.session_state['restart'] = False
 
-if st.button('Train and Evaluate CF Model'):
-    algo = collaborative_filtering(ratings_df)
+if not st.session_state['restart']:
+    main_interaction_streamlit(products, ratings, algo, user_name_to_id)
