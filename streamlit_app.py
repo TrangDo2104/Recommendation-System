@@ -26,20 +26,20 @@ def load_data(csv_file_path, sep=';', index_col=None):
 product_metadata_path = 'Makeup_Products_Metadata.csv'  # Update path as necessary
 user_ratings_path = 'User_review_data.csv'  # Update path as necessary
 
-products_df = load_data(product_metadata_path, sep=';')
-ratings_df = load_data(user_ratings_path, sep=';', index_col='User')
+products_dfs = load_data(product_metadata_path, sep=';')
+ratings_dfs = load_data(user_ratings_path, sep=';', index_col='User')
 
-products= products_df[['Product ID','Product Name', 'Product Price [SEK]','Product Description']]
-products.columns = ['product_id', 'name', 'price', 'description']
-products.head()
+products_df= products_dfs[['Product ID','Product Name', 'Product Price [SEK]','Product Description']]
+products_df.columns = ['product_id', 'name', 'price', 'description']
+products_df.head()
 
-ratings = ratings_df.reset_index().melt(id_vars='User', var_name='Item', value_name='Rating')
-ratings = ratings[ratings['Rating'] > 0]
+ratings_df = ratings_dfs.reset_index().melt(id_vars='User', var_name='Item', value_name='Rating')
+ratings_df = ratings_df[ratings['Rating'] > 0]
 
 # Convert 'user_name' to a categorical type and then to numerical codes
-ratings['user_id'] = ratings['User'].astype('category').cat.codes
-ratings.columns = ['user_name', 'product_id', 'rating', 'user_id']
-user_name_to_id = pd.Series(ratings['user_id'].values, index=ratings['user_name'].str.lower()).to_dict()
+ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
+ratings_df.columns = ['user_name', 'product_id', 'rating', 'user_id']
+user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
 
 def collaborative_filtering(ratings_df):
     """Adapts the collaborative filtering process for Streamlit."""
