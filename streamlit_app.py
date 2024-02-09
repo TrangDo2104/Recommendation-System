@@ -202,7 +202,7 @@ if not products_df.empty and not ratings_df.empty:
         if user_input:
             if user_input.lower() != 'guest':
                 st.write(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
-                recommended_products = hybrid_recommendation(user_input, k=5, ratings_df=ratings_df, user_name_to_id=user_name_to_id)
+                recommended_products = hybrid_recommendation(user_input)
                 st.dataframe(recommended_products[['name', 'product_id', 'hybrid_score']].set_index('product_id'))
             else:
                 st.write("Explore our products as a guest.")
