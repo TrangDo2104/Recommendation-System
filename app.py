@@ -87,6 +87,36 @@ ratings_df.columns = ['user_name', 'product_id', 'rating', 'user_id']
 user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
 
 # Calculate similarity for content-based filtering
+import streamlit as st
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Custom CSS for styling, as provided previously, remains unchanged
+
+# Streamlit UI components
+st.title("⭐ Welcome To Chimp AI's Recommendation System ⭐")
+
+# Define your data loading and processing functions
+def load_data(csv_file_path, sep=';', index_col=None):
+    """Loads data from a CSV file and returns a DataFrame."""
+    try:
+        df = pd.read_csv(csv_file_path, sep=sep, index_col=index_col)
+        return df
+    except Exception as e:
+        st.error(f"Error loading the data: {e}")
+        return None
+
+# Load product metadata and user ratings data
+product_metadata_path = 'Makeup_Products_Metadata.csv'  # Update path as necessary
+user_ratings_path = 'User_review_data.csv'  # Update path as necessary
+
+products_df = load_data(product_metadata_path, sep=';')
+ratings_df = load_data(user_ratings_path, sep=';', index_col='User')
+
+# Ensure your DataFrame manipulations here are correct based on the loaded CSV structure
+
+# Function to calculate similarity for content-based filtering
 def calculate_similarity(products_df, query=None):
     tfidf = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf.fit_transform(products_df['description'])
@@ -106,63 +136,50 @@ def find_similar_products_by_description(query, products, k=5):
     similar_products.columns = ['Name', 'Product ID', 'Relevance Score']
     return similar_products
 
-# New function to recommend based on user history or top-rated products
 def recommend_based_on_user_or_top_rated(user_input, products, ratings, user_name_to_id, k=5):
+    """Generate recommendations based on user's past high ratings or top-rated products."""
     user_id = user_name_to_id.get(user_input.lower())
+    recommendations = pd.DataFrame()
     if user_id is not None:
-        # Find products rated > 3.5 by the user
         high_rated_products = ratings[(ratings['user_name'].str.lower() == user_input.lower()) & (ratings['rating'] > 3.5)]
         if not high_rated_products.empty:
-            # For each product, find similar ones based on description
-            recommendations = pd.DataFrame()
             for product_id in high_rated_products['product_id'].unique():
-                # Check if the product exists in the products DataFrame
                 if not products[products['product_id'] == product_id].empty:
                     product_desc = products[products['product_id'] == product_id]['description'].iloc[0]
                     similar_products = find_similar_products_by_description(product_desc, products, k)
                     recommendations = pd.concat([recommendations, similar_products], ignore_index=True)
-                else:
-                    # If the product ID is not found in the products DataFrame, log or display an error
-                    st.error(f"Product ID {product_id} not found in the database.")
-            # After finding similar products for all high-rated products, deduplicate and sort
-            recommendations = recommendations.drop_duplicates().sort_values('Relevance Score', ascending=False).head(k)
+            if not recommendations.empty:
+                recommendations = recommendations.drop_duplicates().sort_values('Relevance Score', ascending=False).head(k)
+            else:
+                st.error("No similar products found based on user's ratings.")
         else:
-            # If no high-rated products, recommend top-rated globally
-            top_rated_global = ratings.groupby('product_id')['rating'].mean().sort_values(ascending=False).head(k).index
-            recommendations = products[products['product_id'].isin(top_rated_global)]
+            st.markdown("<p class='warning-message'>No high-rated products found for this user. Showing top-rated products instead.</p>", unsafe_allow_html=True)
+            # Implement logic for recommending top-rated products if needed
     else:
-        st.markdown("<p class='warning-message'>User not found or you're a new user. Please search by product description.</p>", unsafe_allow_html=True)
-        recommendations = pd.DataFrame()
+        st.markdown("<p class='warning-message'>User not found. Please search by product description.</p>", unsafe_allow_html=True)
     return recommendations
 
-# Main interaction flow adapted for Streamlit with improved user interface
+# Main interaction flow
 def main_interaction_streamlit(products, ratings, user_name_to_id):
-    """Main interaction flow adapted for Streamlit."""
-    # User input section remains unchanged
-
-    # Adapted logic for personalized recommendations
-    user_input = st.text_input("Enter your name to see recommendations based on your ratings or top-rated products.", key='user_input_name')
+    user_input = st.text_input("Enter your name to see recommendations:", key='user_input_name')
     if user_input:
         recommended_products = recommend_based_on_user_or_top_rated(user_input, products, ratings, user_name_to_id, 5)
         if not recommended_products.empty:
-            st.table(recommended_products[['Name', 'Product ID', 'Relevance Score']])
+            st.table(recommended_products)
         else:
-            st.markdown("<p class='error-message'>No recommendations available.</p>", unsafe_allow_html=True)
-            
-    # New section for searching by product description
-    st.markdown("### Search Products by Description")
-    product_description_query = st.text_input("Enter product description to find similar products.", key='product_desc_search')
+            st.markdown("<p class='error-message'>Unable to generate recommendations.</p>", unsafe_allow_html=True)
+    
+    product_description_query = st.text_input("Or enter a product description to find similar products:", key='product_desc_search')
     if product_description_query:
         similar_products = find_similar_products_by_description(product_description_query, products, 5)
         if not similar_products.empty:
-            st.table(similar_products[['Name', 'Product ID', 'Relevance Score']])
+            st.table(similar_products)
         else:
             st.markdown("<p class='error-message'>No similar products found based on the description.</p>", unsafe_allow_html=True)
 
-    # Product description search functionality remains unchanged
+# Convert 'user_name' to a categorical type and then to numerical codes (adjust according to your DataFrame)
+ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
+user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['User'].str.lower()).to_dict()
 
-if 'restart' not in st.session_state:
-    st.session_state['restart'] = False
-
-if not st.session_state['restart']:
+if __name__ == '__main__':
     main_interaction_streamlit(products_df, ratings_df, user_name_to_id)
