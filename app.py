@@ -84,7 +84,7 @@ ratings_df = ratings_df[ratings_df['Rating'] > 0]
 # Convert 'user_name' to a categorical type and then to numerical codes
 ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
 ratings_df.columns = ['user_name', 'product_id', 'rating', 'user_id']
-user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings['user_name'].str.lower()).to_dict()
+user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
 
 # Function to calculate similarity for content-based filtering
 def calculate_similarity(products_df, query=None):
