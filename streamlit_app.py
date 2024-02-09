@@ -7,14 +7,63 @@ from surprise import Dataset, Reader, SVD, accuracy
 from surprise.model_selection import train_test_split, GridSearchCV
 from collections import defaultdict
 
+# Custom CSS for styling
+st.markdown("""
+    <style>
+        .full-width {
+            width: 100%;
+        }
+        .success-message {
+            color: green;
+            font-weight: bold;
+        }
+        .warning-message {
+            color: orange;
+            font-weight: bold;
+        }
+        .error-message {
+            color: red;
+            font-weight: bold;
+        }
+        .content-container {
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f5f5f5;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+        }
+        .recommendation-container {
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #ffffff;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333333;
+        }
+        .sub-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #666666;
+        }
+        .icon {
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # Streamlit UI components
-st.title('Hybrid Recommendation System')
+st.title('🌟 Hybrid Recommendation System')
 
 # Define your data loading and processing functions
 def load_data(csv_file_path, sep=';', index_col=None):
     """Loads data from a CSV file and returns a DataFrame."""
     try:
         df = pd.read_csv(csv_file_path, sep=sep, index_col=index_col)
+        st.success("Data loaded successfully.")
         return df
     except Exception as e:
         st.error(f"Error loading the data: {e}")
@@ -146,30 +195,30 @@ def personalized_recommendation(user_input, products, ratings, algo, user_name_t
     """Generate personalized product recommendations."""
     user_id = user_name_to_id.get(user_input.lower())
     if user_id is not None:
-        st.success(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
+        st.markdown(f"<p class='success-message'>Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:</p>", unsafe_allow_html=True)
         recommended_products = hybrid_recommendation(user_id, products.copy(), ratings, algo, k)
         recommended_products = recommended_products[['name', 'product_id', 'hybrid_score']]
         recommended_products.columns = ['Name', 'Product ID', 'Relevance Score']
         st.table(recommended_products)
     else:
-        st.warning("User not found or you're a new user. Let's find some products for you.")
+        st.markdown("<p class='warning-message'>User not found or you're a new user. Let's find some products for you.</p>", unsafe_allow_html=True)
 
 def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
     """Main interaction flow adapted for Streamlit."""
-    user_input = st.text_input("Enter your name for personalized recommendations or enter a product description below:", '')
+    user_input = st.text_input("👤 Enter your name for personalized recommendations or enter a product description below:", '')
     
     if user_input:
         personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
     
-    query = st.text_input("What are you looking for? Enter a product description or name:", '')
+    query = st.text_input("🔍 What are you looking for? Enter a product description or name:", '')
     
     if query:
         similar_products = find_similar_products_by_description(query, products, 5)
         if not similar_products.empty:
-            st.success("Top relevant products to your description input:")
+            st.markdown("<p class='success-message'>Top relevant products to your description input:</p>", unsafe_allow_html=True)
             st.table(similar_products)
         else:
-            st.warning("No similar products found.")
+            st.markdown("<p class='warning-message'>No similar products found.</p>", unsafe_allow_html=True)
 
 if 'restart' not in st.session_state:
     st.session_state['restart'] = False
