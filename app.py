@@ -175,7 +175,7 @@ st.markdown("---")  # Separator
 # UI for finding products by description
 st.markdown("### Explore Products Tailored to Your Taste")
 st.markdown("##### Looking for something specific?")
-product_description_query = st.text_input(placeholder="Product description")
+product_description_query = st.text_input("Enter the product description or name here:", placeholder="Product description")
 if product_description_query:
     similar_products = find_similar_products_by_description(product_description_query, products_df, 5)
     if not similar_products.empty:
