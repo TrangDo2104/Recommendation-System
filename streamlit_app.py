@@ -66,8 +66,7 @@ def load_data(csv_file_path, sep=';', index_col=None):
     except Exception as e:
         st.error(f"Error loading the data: {e}")
         return None
-
-
+        
 # Load product metadata and user ratings data
 product_metadata_path = 'Makeup_Products_Metadata.csv'  # Update path as necessary
 user_ratings_path = 'User_review_data.csv'  # Update path as necessary
