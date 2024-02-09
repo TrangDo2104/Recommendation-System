@@ -58,7 +58,7 @@ def precision_recall_at_k(predictions, k=5, threshold=3.5):
     return precisions, recalls
 
 # Update collaborative filtering function to include precision and recall evaluation
-def collaborative_filtering_with_evaluation(ratings_df):
+def collaborative_filtering(ratings_df):
     reader = Reader(rating_scale=(1, 5))
     data = Dataset.load_from_df(ratings_df[['user_id', 'product_id', 'rating']], reader)
     trainset, testset = train_test_split(data, test_size=0.25)
