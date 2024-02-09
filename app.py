@@ -36,9 +36,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 # Streamlit UI components
 # Use st.markdown with HTML and CSS for center alignment
-st.title("""
-        ⭐ Welcome To Chimp AI's Recommendation System ⭐
-    """, unsafe_allow_html=True)
+st.title("⭐ Welcome To Chimp AI's Recommendation System ⭐")
 
 # Define your data loading and processing functions
 def load_data(csv_file_path, sep=';', index_col=None):
