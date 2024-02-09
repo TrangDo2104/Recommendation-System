@@ -187,21 +187,20 @@ def hybrid_recommendation(username, k=5):
 if not products_df.empty and not ratings_df.empty:
     # Main interaction function adjusted for Streamlit
     def main_interaction_streamlit(products_df, ratings_df, user_name_to_id):
-        # User input for personalized recommendations
-        user_input = st.text_input("Enter your name for personalized recommendations or explore as a guest:")
+        user_input_key = "user_input"
+        user_input = st.text_input("Enter your name for personalized recommendations or explore as a guest:", key=user_input_key)
+    
         if user_input:
             if user_input.lower() != 'guest':
-                if user_input.lower() in user_name_to_id:  # Check if user exists
-                    st.write(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
-                    recommended_products = hybrid_recommendation(user_input)
-                    st.dataframe(recommended_products[['name', 'product_id', 'hybrid_score']])
-                else:
-                    st.write("User not found. Please enter a valid username or explore as a guest.")
+                st.write(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
+                recommended_products = hybrid_recommendation(user_input, products_df, ratings_df, user_name_to_id)
+                st.dataframe(recommended_products[['name', 'product_id', 'hybrid_score']])
             else:
                 st.write("Explore our products as a guest.")
-
-        # Input for finding similar products
-        query = st.text_input("Looking for something specific? Enter keywords to find related products:")
+    
+        query_key = "query"
+        query = st.text_input("Looking for something specific? Enter keywords to find related products:", key=query_key)
+        
         if query:
             similar_products = find_similar_products_by_description(query, products_df)
             st.write("Top relevant products to your description input:")
