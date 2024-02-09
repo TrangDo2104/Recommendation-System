@@ -155,11 +155,11 @@ def calculate_similarity(products_df):
 
 # Hybrid Recommendation
 def hybrid_recommendation(user_id, products, ratings, algo, k=5):
-    user_id = user_name_to_id.get(username.lower())
+    user_id = user_name_to_id.get(user_name.lower())
     if user_id is None:
         return pd.DataFrame()
 
-    user_ratings = ratings_df[ratings_df['user_name'].str.lower() == username.lower()]
+    user_ratings = ratings_df[ratings_df['user_name'].str.lower() == user_name.lower()]
     user_ratings = user_ratings.set_index('product_id')['rating'].to_dict()
 
     tfidf = TfidfVectorizer(stop_words='english')
