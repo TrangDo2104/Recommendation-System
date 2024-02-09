@@ -3,8 +3,47 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Custom CSS for styling remains unchanged
-
+# Custom CSS for styling
+st.markdown("""
+<style>
+    .stTextInput>div>div>input {
+        color: #4F8BF9;
+    }
+    h1 {
+        color: #0e1117;
+    }
+    .reportview-container .markdown-text-container {
+        font-family: monospace;
+    }
+    .widget-label {
+        color: #0e1117;
+        font-weight: bold;
+    }
+    .st-bb {
+        background-color: transparent;
+    }
+    .st-at {
+        background-color: #0e1117;
+    }
+    .css-10trblm {
+        background-color: #0e1117;
+        color: #ffffff;
+    }
+    .css-1d391kg {
+        padding-top: 5rem;
+        padding-bottom: 5rem;
+    }
+    .st-bf {
+        font-size: 20px;
+    }
+    .st-dg {
+        color: #4F8BF9;
+    }
+    .stTable {
+        font-size: 16px;
+    }
+</style>
+""", unsafe_allow_html=True)
 # Streamlit UI components
 st.title("⭐ Welcome To Chimp AI's Recommendation System ⭐")
 
@@ -133,10 +172,34 @@ def find_users_without_high_rated_products(ratings_df, threshold=3.5):
 # Assuming 'ratings_df' is already defined and contains the columns 'user_name' and 'rating'
 users_without_high_ratings = find_users_without_high_rated_products(ratings_df)
 
-# Display the result in Streamlit
-if users_without_high_ratings:
-    st.write("Users without any high-rated products (rating > 3.5):")
-    st.write(users_without_high_ratings)
-else:
-    st.write("All users have at least one product rated above 3.5.")
+# Now, for displaying messages in a more interactive and interesting way:
+def display_message(message, category="info"):
+    if category == "info":
+        st.markdown(f"<p style='color: #4F8BF9; font-size: 20px;'>{message}</p>", unsafe_allow_html=True)
+    elif category == "warning":
+        st.markdown(f"<p style='color: orange; font-size: 20px;'>{message}</p>", unsafe_allow_html=True)
+    elif category == "error":
+        st.markdown(f"<p style='color: red; font-size: 20px;'>{message}</p>", unsafe_allow_html=True)
+    elif category == "success":
+        st.markdown(f"<p style='color: green; font-size: 20px;'>{message}</p>", unsafe_allow_html=True)
 
+# Example usage of display_message:
+if user_input:
+    recommended_products = recommend_for_user(user_input, ratings_df, products_df, 5)
+    if not recommended_products.empty:
+        display_message("Here are your personalized recommendations:", "success")
+        st.table(recommended_products)
+    else:
+        display_message("Unable to find recommendations based on your history. But don't worry, here are some top-rated products just for you!", "warning")
+        global_top_products = get_global_top_rated_products(ratings_df, products_df, 5)
+        st.table(global_top_products)
+else:
+    display_message("Enter your username to see personalized recommendations, or explore products by description!", "info")
+
+if product_description_query:
+    similar_products = find_similar_products_by_description(product_description_query, products_df, 5)
+    if not similar_products.empty:
+        display_message("Found some products that might interest you:", "success")
+        st.table(similar_products)
+    else:
+        display_message("No similar products found based on the description.", "error")
