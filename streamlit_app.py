@@ -106,9 +106,16 @@ def calculate_similarity(products_df):
     cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
     return cosine_sim
 
+# Calculate similarity matrix once and store it for reuse
+similarity_matrix = calculate_similarity(products_df)
+
 def hybrid_recommendation(user_id, products, ratings, algo, k=5, product_name=None):
     # Work with a copy to avoid modifying the original DataFrame
     products_copy = products.copy()
+
+    # If specific product indices are provided, filter products_copy to include only these products
+    if product_indices is not None:
+        products_copy = products_copy.iloc[product_indices]
     
     # Check if user_id exists to provide CF predictions
     if user_id is not None:
@@ -117,31 +124,20 @@ def hybrid_recommendation(user_id, products, ratings, algo, k=5, product_name=No
     else:
         products_copy['cf_score'] = 0  # Default to 0 if no user_id
     
-    # Calculate CBF similarity if product_name is provided
-    if product_name:
-        cosine_sim = calculate_similarity(products_copy)
-        idx = products_copy.index[products_copy['name'].str.lower() == product_name.lower()].tolist()
-        if idx:
-            sim_scores = list(enumerate(cosine_sim[idx[0]]))
-            sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-            sim_scores = sim_scores[1:k+1]  # Ignore the first one as it is the product itself
-            product_indices = [i[0] for i in sim_scores]
-            products_copy['cbf_score'] = 0
-            products_copy.loc[product_indices, 'cbf_score'] = [score[1] for score in sim_scores]
-        else:
-            products_copy['cbf_score'] = 0  # Default to 0 if no product_name match
+   # Use the provided similarity matrix if available and applicable
+    if similarity_matrix is not None and product_indices is not None:
+        # Calculate CBF scores using the similarity matrix for the filtered products
+        cbf_scores = similarity_matrix[product_indices, :][:, product_indices].mean(axis=1)
+        products_copy['cbf_score'] = cbf_scores
     else:
         # Calculate CBF similarity based on existing product descriptions
         cbf_similarity = calculate_similarity(products_copy)
         products_copy['cbf_score'] = cbf_similarity.mean(axis=1)
     
-    # Hybrid score: average of CF and CBF scores
+    # Calculate hybrid scores as before
     products_copy['hybrid_score'] = (products_copy['cf_score'] + products_copy['cbf_score']) / 2
-    
-    # Sort and clean up
-    recommended_products = products_copy.sort_values('hybrid_score', ascending=False).head(k)
-    
-    return recommended_products
+
+    return products_copy.sort_values('hybrid_score', ascending=False).head(k)
 
     
 # Train the model
@@ -154,10 +150,11 @@ def find_similar_products_by_description(query, products, k=5):
     """Find similar products based on description."""
     tfidf = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf.fit_transform(products['description'])
-    query_vec = tfidf.transform([query])
-    cosine_sim = cosine_similarity(query_vec, tfidf_matrix).flatten()
+    query_vec = tfidf_vectorizer.transform([query])
+    cosine_sim = cosine_similarity(query_vec, similarity_matrix).flatten()
+    
     top_indices = cosine_sim.argsort()[-k:][::-1]
-    return products.iloc[top_indices][['product_id', 'name']]
+    return top_indices  # Returning indices of top similar products
 
 def personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, k=5):
     user_id = user_name_to_id.get(user_input.lower())
@@ -184,16 +181,17 @@ def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
     if user_input:
         personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
     
-    query = st.text_input("Or, what are you looking for? Enter a product description or name:", '')
+    query = st.text_input("What are you looking for? Enter a product description or name:", '')
     
     if query:
-        similar_products = find_similar_products_by_description(query, products, 5)
-        if not similar_products.empty:
-            st.write("Top relevant products to your description input:")
-            similar_products = format_recommendations(similar_products)  # Apply formatting
-            st.table(similar_products)
+        similar_product_indices = find_similar_products_by_description(query, products_df, similarity_matrix, 5)
+        recommended_products = hybrid_recommendation(None, products_df, ratings_df, algo, similarity_matrix, similar_product_indices, 5)
+        
+        if not recommended_products.empty:
+            st.write("Top relevant products to your description input with hybrid scoring:")
+            st.table(recommended_products[['name', 'hybrid_score']])
         else:
-            st.write("No similar products found.")
+            st.write("No similar products found based on the description.")
 
 if 'restart' not in st.session_state:
     st.session_state['restart'] = False
