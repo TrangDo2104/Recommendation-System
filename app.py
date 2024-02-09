@@ -134,23 +134,6 @@ def recommend_for_user(user_input, ratings_df, products_df, k=5):
 
     return similar_products
 
-# UI for user input
-user_input = st.text_input("Enter your username for personalized recommendations:")
-if user_input:
-    recommended_products = recommend_for_user(user_input, ratings_df, products_df, 5)
-    if not recommended_products.empty:
-        st.write(recommended_products)
-    else:
-        st.write("Unable to find recommendations based on user history.")
-
-product_description_query = st.text_input("Or enter a product description to find similar products:")
-if product_description_query:
-    similar_products = find_similar_products_by_description(product_description_query, products_df, 5)
-    if not similar_products.empty:
-        st.write(similar_products)
-    else:
-        st.write("No similar products found based")
-
 def find_users_without_high_rated_products(ratings_df, threshold=3.5):
     """Find users who do not have any products rated above the specified threshold."""
     # Group by user_name, filter those where max rating is <= threshold
