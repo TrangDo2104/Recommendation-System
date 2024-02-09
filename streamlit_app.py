@@ -145,6 +145,9 @@ def hybrid_recommendation(user_id, products, ratings, algo, k=5, product_name=No
 
     
 # Train the model
+if 'algo' not in st.session_state:
+    st.session_state['algo'] = collaborative_filtering(ratings_df)
+algo = st.session_state['algo']
 algo = collaborative_filtering(ratings_df)
 
 def find_similar_products_by_description(query, products, k=5):
@@ -157,28 +160,37 @@ def find_similar_products_by_description(query, products, k=5):
     return products.iloc[top_indices][['product_id', 'name']]
 
 def personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, k=5):
-    """Generate personalized product recommendations."""
     user_id = user_name_to_id.get(user_input.lower())
     if user_id is not None:
         st.write(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
         recommended_products = hybrid_recommendation(user_id, products.copy(), ratings, algo, k)
-        st.write(recommended_products[['name', 'hybrid_score']])
+        formatted_recommendations = format_recommendations(recommended_products)
+        st.table(formatted_recommendations)
     else:
         st.write("User not found or you're a new user. Let's find some products for you.")
 
+def format_recommendations(recommended_products):
+    # Assuming 'hybrid_score' is your relevance score column
+    recommended_products = recommended_products[['name', 'product_id', 'hybrid_score']]
+    recommended_products.columns = ['Name', 'Product ID', 'Relevance Score']
+    recommended_products['Product ID'] = recommended_products['Product ID'].astype(str)
+    recommended_products['Relevance Score'] = recommended_products['Relevance Score'].round(4)
+    return recommended_products
+
+
 def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
-    """Main interaction flow adapted for Streamlit."""
-    user_input = st.text_input("Enter your name for personalized recommendations or enter a product description below:", '')
+    user_input = st.text_input("Enter your name for personalized recommendations:", '')
     
     if user_input:
         personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
     
-    query = st.text_input("What are you looking for? Enter a product description or name:", '')
+    query = st.text_input("Or, what are you looking for? Enter a product description or name:", '')
     
     if query:
         similar_products = find_similar_products_by_description(query, products, 5)
         if not similar_products.empty:
             st.write("Top relevant products to your description input:")
+            similar_products = format_recommendations(similar_products)  # Apply formatting
             st.table(similar_products)
         else:
             st.write("No similar products found.")
