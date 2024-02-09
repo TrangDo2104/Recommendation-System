@@ -62,46 +62,51 @@ def get_global_top_rated_products(ratings_df, products_df, k=5):
     ratings_df['product_id'] = ratings_df['product_id'].astype(str)
     products_df['product_id'] = products_df['product_id'].astype(str)
 
-    # Calculate average rating for each product and count of ratings >= 4
+    # Calculate average rating for each product
     avg_ratings = ratings_df.groupby('product_id').agg(
         avg_rating=('rating', 'mean'),
         count_ratings=('rating', lambda x: (x >= 4).sum())
     ).reset_index()
 
-    # Filter products with avg_rating >= 4, sort by count_ratings descending
+    # Filter for products with avg_rating >= 4 and sort by count_ratings
     top_rated_products = avg_ratings[avg_ratings['avg_rating'] >= 4].sort_values(by='count_ratings', ascending=False).head(k)
 
     # Join with products_df to get product details
-    top_rated_details = pd.merge(top_rated_products, products_df, on='product_id', how='left')
+    top_rated_details = pd.merge(top_rated_products, products_df, on='product_id', how='inner')[['product_id', 'name', 'avg_rating', 'count_ratings']]
 
     return top_rated_details
 
 def recommend_for_user(user_input, ratings_df, products_df, k=5):
-    """Recommend products based on a user's past high ratings or global top-rated products."""
-    # Attempt to find high-rated products for the user
-    user_ratings = ratings_df[ratings_df['user_name'].str.lower() == user_input.lower()]
-    
-    high_rated_products = user_ratings[user_ratings['rating'] > 3.5]['product_id'].unique()
+    """Recommend products based on a user's past highest-rated product."""
+    user_input_lower = user_input.lower()
+    user_ratings = ratings_df[ratings_df['user_name'].str.lower() == user_input_lower]
 
-    similar_products = pd.DataFrame()
-    if len(high_rated_products) > 0:
-        for product_id in high_rated_products:
-            if product_id in products_df['product_id'].values:
-                product_desc = products_df.loc[products_df['product_id'] == product_id, 'description'].iloc[0]
-                sim_products = find_similar_products_by_description(product_desc, products_df, k)
-                similar_products = pd.concat([similar_products, sim_products], axis=0).drop_duplicates().head(k)
-    else:
-        # User has no high-rated products or not found, use global top-rated products instead
-        similar_products = get_global_top_rated_products(ratings_df, products_df, k)
+    if user_ratings.empty:
+        st.write("No ratings found for this user. Showing global top-rated products instead.")
+        return get_global_top_rated_products(ratings_df, products_df, k)
 
-    if similar_products.empty:
-        st.write("Unable to find recommendations based on user history. Showing global top-rated products instead.")
-        similar_products = get_global_top_rated_products(ratings_df, products_df, k)
-    
+    # Filter ratings for products rated above 3.5
+    high_rated = user_ratings[user_ratings['rating'] > 3.5].copy()
+    if high_rated.empty:
+        st.write("No high-rated products for this user. Showing global top-rated products instead.")
+        return get_global_top_rated_products(ratings_df, products_df, k)
+
+    # Find the highest-rated product
+    highest_rated_product_id = high_rated.loc[high_rated['rating'].idxmax(), 'product_id']
+
+    # Convert product_id to string for consistent data type
+    highest_rated_product_id_str = str(highest_rated_product_id)
+    products_df['product_id'] = products_df['product_id'].astype(str)
+
+    # Find and exclude the highest-rated product from the recommendations if present
+    highest_rated_product_desc = products_df.loc[products_df['product_id'] == highest_rated_product_id_str, 'description'].iloc[0]
+    similar_products = find_similar_products_by_description(highest_rated_product_desc, products_df, k + 1)  # +1 to account for the product itself
+    similar_products = similar_products[similar_products['product_id'] != highest_rated_product_id_str].head(k)
+
     return similar_products
 
 # UI for user input
-user_input = st.text_input("Enter your user name for personalized recommendations:")
+user_input = st.text_input("Enter your username for personalized recommendations:")
 if user_input:
     recommended_products = recommend_for_user(user_input, ratings_df, products_df, 5)
     if not recommended_products.empty:
