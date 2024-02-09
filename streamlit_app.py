@@ -152,6 +152,7 @@ def find_similar_products_by_description(query, products_df, k=5):
 
 # Hybrid Recommendation
 def hybrid_recommendation(username, k=5):
+    products_df_copy = products_df.copy()
     user_id = user_name_to_id.get(username.lower())
     if user_id is None:
         return pd.DataFrame()
