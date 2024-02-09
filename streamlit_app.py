@@ -187,12 +187,11 @@ def hybrid_recommendation(username, k=5):
 if not products_df.empty and not ratings_df.empty:
     # Main interaction function adjusted for Streamlit
     # Initialize a counter for generating unique keys
-    widget_counter = count()
+    # Add this line before the main_interaction_streamlit function
+    widget_counter = itertools.count()
     
     # Main interaction function adjusted for Streamlit
     def main_interaction_streamlit(products_df, ratings_df, user_name_to_id):
-        widget_counter = count()
-    
         user_input_key = next(widget_counter)
         user_query_key = next(widget_counter)
     
@@ -213,7 +212,7 @@ if not products_df.empty and not ratings_df.empty:
             st.dataframe(similar_products)
 
 
-    if __name__ == "__main__":
+     if __name__ == "__main__":
         main_interaction_streamlit(products_df, ratings_df, user_name_to_id)
 else:
     st.error("Failed to load data. Please check the file paths and try again.")
