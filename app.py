@@ -116,9 +116,15 @@ def recommend_based_on_user_or_top_rated(user_input, products, ratings, user_nam
             # For each product, find similar ones based on description
             recommendations = pd.DataFrame()
             for product_id in high_rated_products['product_id'].unique():
-                product_desc = products[products['product_id'] == product_id]['description'].iloc[0]
-                similar_products = find_similar_products_by_description(product_desc, products, k)
-                recommendations = pd.concat([recommendations, similar_products], ignore_index=True)
+                # Check if the product exists in the products DataFrame
+                if not products[products['product_id'] == product_id].empty:
+                    product_desc = products[products['product_id'] == product_id]['description'].iloc[0]
+                    similar_products = find_similar_products_by_description(product_desc, products, k)
+                    recommendations = pd.concat([recommendations, similar_products], ignore_index=True)
+                else:
+                    # If the product ID is not found in the products DataFrame, log or display an error
+                    st.error(f"Product ID {product_id} not found in the database.")
+            # After finding similar products for all high-rated products, deduplicate and sort
             recommendations = recommendations.drop_duplicates().sort_values('Relevance Score', ascending=False).head(k)
         else:
             # If no high-rated products, recommend top-rated globally
@@ -142,6 +148,16 @@ def main_interaction_streamlit(products, ratings, user_name_to_id):
             st.table(recommended_products[['Name', 'Product ID', 'Relevance Score']])
         else:
             st.markdown("<p class='error-message'>No recommendations available.</p>", unsafe_allow_html=True)
+            
+    # New section for searching by product description
+    st.markdown("### Search Products by Description")
+    product_description_query = st.text_input("Enter product description to find similar products.", key='product_desc_search')
+    if product_description_query:
+        similar_products = find_similar_products_by_description(product_description_query, products, 5)
+        if not similar_products.empty:
+            st.table(similar_products[['Name', 'Product ID', 'Relevance Score']])
+        else:
+            st.markdown("<p class='error-message'>No similar products found based on the description.</p>", unsafe_allow_html=True)
 
     # Product description search functionality remains unchanged
 
