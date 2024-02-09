@@ -3,44 +3,72 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Custom CSS for styling
+# Inject custom CSS
 st.markdown("""
 <style>
-    .stTextInput>div>div>input {
-        color: #4F8BF9;
+    /* General element styling */
+    .stTextInput>div>div>input, .widget-label, .st-bb, .css-10trblm, .st-bf, .st-dg, .stTable {
+        font-family: 'Arial', sans-serif;
     }
+
     h1 {
-        color: #0e1117;
+        color: #333; /* Dark grey color for the main title */
     }
-    .reportview-container .markdown-text-container {
-        font-family: monospace;
+
+    /* Text input styling */
+    .stTextInput>div>div>input {
+        color: #4a4a4a; /* Dark text for better readability */
     }
+
+    /* Widget label styling */
     .widget-label {
-        color: #0e1117;
-        font-weight: bold;
+        color: #333; /* Dark grey for widget labels */
+        font-weight: 400; /* Normal font weight for a cleaner look */
     }
-    .st-bb {
-        background-color: transparent;
+
+    /* Button and active element styling */
+    .st-bb, .css-10trblm {
+        background-color: #f0f2f6; /* Light grey background for buttons and active elements */
+        color: #4a4a4a; /* Dark text for contrast */
     }
-    .st-at {
-        background-color: #0e1117;
+
+    /* Background and padding for main content area */
+    .reportview-container .main .block-container {
+        background-color: #ffffff; /* White background for content area */
+        padding: 2rem; /* Spacious padding for content */
+        border-radius: 0.5rem; /* Rounded corners for the container */
     }
-    .css-10trblm {
-        background-color: #0e1117;
-        color: #ffffff;
-    }
-    .css-1d391kg {
-        padding-top: 5rem;
-        padding-bottom: 5rem;
-    }
-    .st-bf {
-        font-size: 20px;
-    }
-    .st-dg {
-        color: #4F8BF9;
-    }
+
+    /* Styling for tables */
     .stTable {
-        font-size: 16px;
+        font-size: 16px; /* Slightly larger font for readability */
+    }
+
+    /* Custom message styling */
+    .custom-message {
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0px;
+    }
+
+    .info-message {
+        background-color: #d9edf7;
+        color: #31708f;
+    }
+
+    .success-message {
+        background-color: #dff0d8;
+        color: #3c763d;
+    }
+
+    .warning-message {
+        background-color: #fcf8e3;
+        color: #8a6d3b;
+    }
+
+    .error-message {
+        background-color: #f2dede;
+        color: #a94442;
     }
 </style>
 """, unsafe_allow_html=True)
