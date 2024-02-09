@@ -4,71 +4,33 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # Inject custom CSS
+
+# Custom CSS for styling
 st.markdown("""
 <style>
-    /* General element styling */
-    .stTextInput>div>div>input, .widget-label, .st-bb, .css-10trblm, .st-bf, .st-dg, .stTable {
-        font-family: 'Arial', sans-serif;
-    }
-
-    h1 {
-        color: #333; /* Dark grey color for the main title */
-    }
-
-    /* Text input styling */
-    .stTextInput>div>div>input {
-        color: #4a4a4a; /* Dark text for better readability */
-    }
-
-    /* Widget label styling */
-    .widget-label {
-        color: #333; /* Dark grey for widget labels */
-        font-weight: 400; /* Normal font weight for a cleaner look */
-    }
-
-    /* Button and active element styling */
-    .st-bb, .css-10trblm {
-        background-color: #f0f2f6; /* Light grey background for buttons and active elements */
-        color: #4a4a4a; /* Dark text for contrast */
-    }
-
-    /* Background and padding for main content area */
+    /* Custom styling */
+    /* Main content area */
     .reportview-container .main .block-container {
-        background-color: #ffffff; /* White background for content area */
-        padding: 2rem; /* Spacious padding for content */
-        border-radius: 0.5rem; /* Rounded corners for the container */
+        padding-top: 2rem;
+        padding-bottom: 2rem;
     }
-
-    /* Styling for tables */
-    .stTable {
-        font-size: 16px; /* Slightly larger font for readability */
+    
+    /* Input widgets styling */
+    .stTextInput>div>div>input {
+        border-radius: 20px;
     }
-
-    /* Custom message styling */
+    
+    /* Messages and alerts */
+    .stAlert {
+        border-radius: 20px;
+    }
+    
     .custom-message {
-        padding: 10px;
+        border: 1px solid #4CAF50;
         border-radius: 5px;
+        padding: 10px;
         margin: 10px 0px;
-    }
-
-    .info-message {
-        background-color: #d9edf7;
-        color: #31708f;
-    }
-
-    .success-message {
-        background-color: #dff0d8;
-        color: #3c763d;
-    }
-
-    .warning-message {
-        background-color: #fcf8e3;
-        color: #8a6d3b;
-    }
-
-    .error-message {
-        background-color: #f2dede;
-        color: #a94442;
+        text-align: center;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -210,39 +172,32 @@ def display_message(message, category="info"):
     elif category == "success":
         st.markdown(f"<div class='custom-message success-message'>{message}</div>", unsafe_allow_html=True)
 
-# Main App Logic
-st.markdown("## 🌟 Uncover Your Personalized Treasures 🌟")
-st.markdown("👤 **Enter your username** to unlock products curated just for you:")
-# Assuming the rest of your app setup remains the same
-
-# UI for user input with personalized recommendations
-user_input = st.text_input("Enter your username for personalized recommendations:", placeholder="Your Username Here")
-
+# UI for personalized recommendations
+st.header("🌟 Uncover Your Personalized Treasures")
+user_input = st.text_input("Enter your username:", placeholder="Username")
 if user_input:
+    # Assuming recommend_for_user returns DataFrame
     recommended_products = recommend_for_user(user_input, ratings_df, products_df, 5)
     if not recommended_products.empty:
-        # Display a personalized welcome message with the user's name
-        display_message(f"Welcome {user_input}, here are your personalized products:", "success")
-        st.table(recommended_products)
+        st.markdown(f"<div class='custom-message'>Welcome {user_input}, here are your personalized products:</div>", unsafe_allow_html=True)
+        st.dataframe(recommended_products)  # Use st.dataframe for better control over the display
     else:
-        # If no personalized recommendations found, show a message and potentially global top picks
-        display_message(f"Couldn't find specific recommendations for you, {user_input}. But don't worry, here are some top picks instead!", "warning")
+        st.warning(f"Couldn't find specific recommendations for {user_input}. Here are some top-rated products instead.")
         global_top_products = get_global_top_rated_products(ratings_df, products_df, 5)
-        st.table(global_top_products)
+        st.dataframe(global_top_products)
 
-st.markdown("---")  # Visual separation
+st.markdown("---")  # Separator
 
-st.markdown("## 🛍️ Explore Products Tailored to Your Taste 🛍️")
-st.markdown("🔎 **Looking for something specific?** Enter a product description to find your next favorite item:")
-product_description_query = st.text_input("", key="product_description", placeholder="Describe the product you're interested in")
-
+# UI for finding products by description
+st.header("🛍️ Explore Products Tailored to Your Taste")
+product_description_query = st.text_input("Looking for something specific?", placeholder="Product description")
 if product_description_query:
     similar_products = find_similar_products_by_description(product_description_query, products_df, 5)
     if not similar_products.empty:
-        display_message("Found some products that might interest you:", "success")
-        st.table(similar_products)
+        st.markdown("<div class='custom-message'>Found some products that might interest you:</div>", unsafe_allow_html=True)
+        st.dataframe(similar_products)
     else:
-        display_message("🚫 No matches found based on the description. Try different keywords!", "error")
+        st.error("No matches found based on the description. Try different keywords!")
 
 # # Now, for displaying messages in a more interactive and interesting way:
 # def display_message(message, category="info"):
