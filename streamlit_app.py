@@ -135,14 +135,19 @@ def precision_recall_at_k(predictions, k=5, threshold=3.5):
 
     return precision, recall
 
-# Find Similar Products by Description
-def find_similar_products_by_description(query, k=5):
+def find_similar_products_by_description(query, products_df):
     tfidf = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf.fit_transform(products_df['description'])
     query_vec = tfidf.transform([query])
-    cosine_sim = cosine_similarity(query_vec, tfidf_matrix).flatten()
-    top_indices = cosine_sim.argsort()[-k:][::-1]
-    return products_df.iloc[top_indices][['name', 'product_id']]
+    cosine_sim = cosine_similarity(query_vec, tfidf_matrix)
+    
+    if isinstance(cosine_sim, np.ndarray):
+        cosine_sim = cosine_sim.flatten()
+        top_indices = cosine_sim.argsort()[-k:][::-1]
+        return products_df.iloc[top_indices][['name', 'product_id']]
+    else:
+        st.error("Error computing cosine similarity.")
+        return pd.DataFrame()
 
 # Hybrid Recommendation
 def hybrid_recommendation(username, k=5):
