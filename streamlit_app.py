@@ -179,30 +179,38 @@ def hybrid_recommendation(username, k=5):
 
     return products_df.sort_values(by='hybrid_score', ascending=False).head(k)
 
-# Main interaction function adjusted for Streamlit
-def main_interaction_streamlit(products_df, ratings_df, user_name_to_id):
-    st.title("Chimp AI: Personalized Product Recommendations")
+if not products_df.empty and not ratings_df.empty:
+    products_df = preprocess_product_data(products_df)
+    ratings_df, user_name_to_id = preprocess_ratings_data(ratings_df)
 
-    user_input = st.text_input("Enter your name for personalized recommendations or explore as a guest:", '')
+    # Collaborative filtering with username, precision_recall_at_k, hybrid_recommendation, and find_similar_products_by_description functions remain unchanged
 
-    if user_input.lower() != 'guest' and user_input:
-        if user_input.lower() in user_name_to_id:
-            # Personalized recommendations
-            st.write(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
-            recommended_products = hybrid_recommendation(user_input, products_df, ratings_df, algo, user_name_to_id)
-            st.dataframe(recommended_products)
-        else:
-            st.write("User not found or you're a new user. Let's find some products for you.")
-    elif user_input.lower() == 'guest':
-        st.write("Explore our products as a guest.")
+    # Main interaction function adjusted for Streamlit
+    def main_interaction_streamlit(products_df, ratings_df, user_name_to_id):
+        # User input for personalized recommendations
+        user_input = st.text_input("Enter your name for personalized recommendations or explore as a guest:")
+        if user_input:
+            if user_input.lower() != 'guest':
+                if user_input.lower() in user_name_to_id:  # Check if user exists
+                    st.write(f"Welcome back, {user_input.capitalize()}! Here are your personalized recommendations:")
+                    recommended_products = hybrid_recommendation(user_input)
+                    st.dataframe(recommended_products[['name', 'product_id', 'hybrid_score']])
+                else:
+                    st.write("User not found. Please enter a valid username or explore as a guest.")
+            else:
+                st.write("Explore our products as a guest.")
 
-    # Assuming the function 'find_similar_products_by_description' is defined
-    query = st.text_input("Looking for something specific? Enter keywords to find related products:", '')
+        # Input for finding similar products
+        query = st.text_input("Looking for something specific? Enter keywords to find related products:")
+        if query:
+            similar_products = find_similar_products_by_description(query, products_df)
+            st.write("Top relevant products to your description input:")
+            st.dataframe(similar_products)
 
-    if query:
-        similar_products = find_similar_products_by_description(query, products_df)
-        st.write("Top relevant products to your description input:")
-        st.dataframe(similar_products)
+    if __name__ == "__main__":
+        main_interaction_streamlit(products_df, ratings_df, user_name_to_id)
+else:
+    st.error("Failed to load data. Please check the file paths and try again.")
 
 if __name__ == "__main__":
     # Ensure collaborative_filtering_with_username and other necessary functions are defined and called correctly
