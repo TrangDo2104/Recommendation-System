@@ -146,23 +146,59 @@ def precision_recall_at_k(predictions, k=5, threshold=3.5):
     return precision, recall
 
 
-# Calculate similarity for content-based filtering
-def calculate_similarity(products_df):
-    tfidf = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = tfidf.fit_transform(products_df['description'])
-    cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
-    return cosine_sim
+# Function to calculate similarity based on user preferences
+def calculate_user_preference_similarity(user_id, products, ratings, tfidf_matrix):
+    # Filter ratings for the current user
+    user_ratings = ratings[ratings['user_id'] == user_id]
+    
+    # Determine positively and negatively rated product_ids
+    positive_products = user_ratings[user_ratings['rating'] > 3.5]['product_id']
+    negative_products = user_ratings[user_ratings['rating'] <= 3.5]['product_id']
+    
+    # Calculate similarity scores for all products
+    product_similarities = cosine_similarity(tfidf_matrix, tfidf_matrix)
+    
+    # Initialize an array to store adjusted CBF scores
+    adjusted_scores = np.zeros(tfidf_matrix.shape[0])
+    
+    # Adjust scores based on positive ratings
+    for product_id in positive_products:
+        product_indices = products.index[products['product_id'] == product_id].tolist()
+        if product_indices:  # Check if the list is not empty
+            product_idx = product_indices[0]
+            similarity_scores = product_similarities[product_idx]
 
-# Hybrid Recommendation Function
+            # Identify significantly similar products (e.g., above 75th percentile of similarity)
+            threshold = np.percentile(similarity_scores, 75)
+            adjusted_scores += np.where(similarity_scores > threshold, similarity_scores, 0)
+
+    # Similarly, add checks for negative_products
+    for product_id in negative_products:
+        product_indices = products.index[products['product_id'] == product_id].tolist()
+        if product_indices:  # Check if the list is not empty
+            product_idx = product_indices[0]
+            similarity_scores = product_similarities[product_idx]
+
+            # Identify significantly similar products (e.g., above 75th percentile of similarity)
+            threshold = np.percentile(similarity_scores, 75)
+            adjusted_scores -= np.where(similarity_scores > threshold, similarity_scores, 0)
+
+    
+    return adjusted_scores
+
+# Enhanced Hybrid Recommendation Function
 def hybrid_recommendation(user_id, products, ratings, algo, k=5):
-    # Logic as provided
-    # Check if user_id exists to provide CF predictions
+    # Calculate TF-IDF matrix for all products
+    tfidf = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = tfidf.fit_transform(products['description'])
+    
+    # CF predictions
     cf_predictions = [algo.predict(user_id, pid).est for pid in products['product_id']]
     products['cf_score'] = cf_predictions
     
-    # Calculate CBF similarity
-    cbf_similarity = calculate_similarity(products)
-    products['cbf_score'] = cbf_similarity.mean(axis=1)
+    # Calculate adjusted CBF similarity based on user preferences
+    cbf_scores = calculate_user_preference_similarity(user_id, products, ratings, tfidf_matrix)
+    products['cbf_score'] = cbf_scores
     
     # Hybrid score
     products['hybrid_score'] = (products['cf_score'] + products['cbf_score']) / 2
