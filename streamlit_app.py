@@ -88,8 +88,8 @@ user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user
 def collaborative_filtering(ratings_df):
     """Adapts the collaborative filtering process for Streamlit."""
     st.write("Starting Collaborative Filtering with SVD algorithm...")
-    st.info("Click the button below to show details")
-    if st.button("Show Details"):
+    show_details = st.button("Show Details")
+    if show_details:
         # Data preparation
         reader = Reader(rating_scale=(1, 5))
         data = Dataset.load_from_df(ratings_df[['user_id', 'product_id', 'rating']], reader)
@@ -120,6 +120,8 @@ def collaborative_filtering(ratings_df):
 
         st.write(f"Average Precision: {avg_precision:.2f}")
         st.write(f"Average Recall: {avg_recall:.2f}")
+    else:
+        st.info("Click the button above to show details")
 
 def precision_recall_at_k(predictions, k=5, threshold=3.5):
     """Calculates precision and recall at k for given predictions."""
