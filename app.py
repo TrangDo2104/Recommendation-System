@@ -157,7 +157,7 @@ def display_message(message, category="info"):
         st.markdown(f"<div class='custom-message success-message'>{message}</div>", unsafe_allow_html=True)
 
 # UI for personalized recommendations
-st.header("🌟 Uncover Your Personalized Treasures")
+st.markdown("### Uncover Your Personalized Treasures")
 user_input = st.text_input("Enter your username:", placeholder="Username")
 if user_input:
     # Assuming recommend_for_user returns DataFrame
@@ -173,7 +173,7 @@ if user_input:
 st.markdown("---")  # Separator
 
 # UI for finding products by description
-st.header("🛍️ Explore Products Tailored to Your Taste")
+st.markdown("### Explore Products Tailored to Your Taste")
 product_description_query = st.text_input("Looking for something specific?", placeholder="Product description")
 if product_description_query:
     similar_products = find_similar_products_by_description(product_description_query, products_df, 5)
