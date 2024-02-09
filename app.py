@@ -86,36 +86,6 @@ ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
 ratings_df.columns = ['user_name', 'product_id', 'rating', 'user_id']
 user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
 
-# Calculate similarity for content-based filtering
-import streamlit as st
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
-# Custom CSS for styling, as provided previously, remains unchanged
-
-# Streamlit UI components
-st.title("⭐ Welcome To Chimp AI's Recommendation System ⭐")
-
-# Define your data loading and processing functions
-def load_data(csv_file_path, sep=';', index_col=None):
-    """Loads data from a CSV file and returns a DataFrame."""
-    try:
-        df = pd.read_csv(csv_file_path, sep=sep, index_col=index_col)
-        return df
-    except Exception as e:
-        st.error(f"Error loading the data: {e}")
-        return None
-
-# Load product metadata and user ratings data
-product_metadata_path = 'Makeup_Products_Metadata.csv'  # Update path as necessary
-user_ratings_path = 'User_review_data.csv'  # Update path as necessary
-
-products_df = load_data(product_metadata_path, sep=';')
-ratings_df = load_data(user_ratings_path, sep=';', index_col='User')
-
-# Ensure your DataFrame manipulations here are correct based on the loaded CSV structure
-
 # Function to calculate similarity for content-based filtering
 def calculate_similarity(products_df, query=None):
     tfidf = TfidfVectorizer(stop_words='english')
