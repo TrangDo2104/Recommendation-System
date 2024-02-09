@@ -159,7 +159,7 @@ def personalized_recommendation(user_input, products, ratings, algo, user_name_t
 
 def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
     """Main interaction flow adapted for Streamlit."""
-    user_input = st.text_input("Type 'guest' to continue as a guest or enter your name for personalized recommendations:", '')
+    user_input = st.text_input("Enter your name for personalized recommendations or enter a product description below:", '')
     
     if user_input:
         personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
