@@ -139,10 +139,6 @@ def hybrid_recommendation(user_id, product_name, products_df, ratings_df, algo, 
     
     return recommended_products
 
-# Streamlit inputs for user and product name
-user_input = st.text_input("Enter username (for user-based recommendations):")
-product_input = st.text_input("Enter product name (for product-based recommendations):")
-
 # Train the model
 algo = collaborative_filtering(ratings_df)
 
