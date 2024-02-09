@@ -61,7 +61,7 @@ def load_data(csv_file_path, sep=';', index_col=None):
     """Loads data from a CSV file and returns a DataFrame."""
     try:
         df = pd.read_csv(csv_file_path, sep=sep, index_col=index_col)
-        st.success("Data loaded successfully.")
+        # st.success("Data loaded successfully.")
         return df
     except Exception as e:
         st.error(f"Error loading the data: {e}")
