@@ -87,8 +87,10 @@ user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user
 
 def collaborative_filtering(ratings_df):
     """Adapts the collaborative filtering process for Streamlit."""
-    show_details = st.checkbox("Show Collaborative Filtering Details")
-    if show_details:
+    st.write("Choose level of details for Collaborative Filtering:")
+    detail_level = st.selectbox("Level of details", ["Basic", "Advanced"])
+    
+    if detail_level == "Advanced":
         st.write("Starting Collaborative Filtering with SVD algorithm...")
 
         # Data preparation
@@ -203,12 +205,12 @@ def personalized_recommendation(user_input, products, ratings, algo, user_name_t
 
 def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
     """Main interaction flow adapted for Streamlit."""
-    user_input = st.text_input("👥 Enter your name for personalized recommendations or enter a product description below:", '')
+    user_input = st.text_input("Enter your name for personalized recommendations or enter a product description below:", '')
     
     if user_input:
         personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
     
-    query = st.text_input("🔍 What are you looking for? Enter a product description or name:", '')
+    query = st.text_input("Or, Enter a product description or name:", '')
     
     if query:
         similar_products = find_similar_products_by_description(query, products, 5)
