@@ -207,7 +207,7 @@ def main_interaction_streamlit(products, ratings, algo, user_name_to_id):
     if user_input:
         personalized_recommendation(user_input, products, ratings, algo, user_name_to_id, 5)
     
-    query = st.text_input("Or, Enter a product description or name:", '')
+    query = st.text_input("What are you looking for? Enter a product description or name:", '')
     
     if query:
         similar_products = find_similar_products_by_description(query, products, 5)
