@@ -148,8 +148,8 @@ def main_interaction_streamlit(products, ratings, user_name_to_id):
             st.markdown("<p class='error-message'>No similar products found based on the description.</p>", unsafe_allow_html=True)
 
 # Convert 'user_name' to a categorical type and then to numerical codes (adjust according to your DataFrame)
-ratings_df['user_id'] = ratings_df['User'].astype('category').cat.codes
-user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['User'].str.lower()).to_dict()
+ratings_df['user_id'] = ratings_df['user_name'].astype('category').cat.codes
+user_name_to_id = pd.Series(ratings_df['user_id'].values, index=ratings_df['user_name'].str.lower()).to_dict()
 
 if __name__ == '__main__':
     main_interaction_streamlit(products_df, ratings_df, user_name_to_id)
