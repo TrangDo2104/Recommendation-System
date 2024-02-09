@@ -45,23 +45,28 @@ def collaborative_filtering(ratings_df):
     """Adapts the collaborative filtering process for Streamlit."""
     st.write("Starting Collaborative Filtering with SVD algorithm...")
 
-def collaborative_filtering(ratings_df):
-    """Adapts the collaborative filtering process for Streamlit."""
-    st.write("Starting Collaborative Filtering with SVD algorithm...")
+    # Data preparation
     reader = Reader(rating_scale=(1, 5))
     data = Dataset.load_from_df(ratings_df[['user_id', 'product_id', 'rating']], reader)
-    trainset, testset = train_test_split(data, test_size=0.25)
     
-    # Hyperparameter tuning with GridSearchCV
+    # Split data into training and test set
+    trainset, testset = train_test_split(data, test_size=0.25)
+
+    # GridSearchCV for SVD hyperparameters
+    st.write("Tuning hyperparameters...")
     param_grid = {'n_epochs': [5, 10], 'lr_all': [0.002, 0.005], 'reg_all': [0.02, 0.04]}
     gs = GridSearchCV(SVD, param_grid, measures=['rmse'], cv=3)
     gs.fit(data)
-    
-    # Best model and retraining
+
+    # Best SVD model
     algo = gs.best_estimator['rmse']
+    st.write(f"Best hyperparameters: {gs.best_params['rmse']}")
+
+    # Re-train on the full dataset
     trainset = data.build_full_trainset()
     algo.fit(trainset)
-    
+
+    # The function should return 'algo' which is the trained model object.
     return algo
 
 def precision_recall_at_k(predictions, k=5, threshold=3.5):
@@ -114,8 +119,6 @@ def hybrid_recommendation(user_id, products, ratings, algo, k=5):
     
 # Train the model
 algo = collaborative_filtering(ratings_df)
-st.write(f"Type of algo after assignment: {type(algo)}")  # This should not be 'int'
-
 
 def find_similar_products_by_description(query, products, k=5):
     """Find similar products based on description."""
