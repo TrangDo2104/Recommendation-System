@@ -143,7 +143,6 @@ def find_users_without_high_rated_products(ratings_df, threshold=3.5):
 
     return users_without_high_ratings
 
-# Assuming 'ratings_df' is already defined and contains the columns 'user_name' and 'rating'
 users_without_high_ratings = find_users_without_high_rated_products(ratings_df)
 # Display Message Function
 def display_message(message, category="info"):
@@ -193,7 +192,6 @@ def find_users_without_high_rated_products(ratings_df, threshold=3.5):
 
     return users_without_high_ratings
 
-# Assuming 'ratings_df' is already defined and contains the columns 'user_name' and 'rating'
 users_without_high_ratings = find_users_without_high_rated_products(ratings_df)
 
 # Display the result in Streamlit
